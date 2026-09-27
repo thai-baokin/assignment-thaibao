@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/tasks - Lấy toàn bộ danh sách tasks (sắp xếp mới nhất lên đầu)
 export async function GET() {
   try {
@@ -12,9 +14,10 @@ export async function GET() {
 
     return NextResponse.json(tasks, { status: 200 });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     console.error("Lỗi khi lấy danh sách tasks:", error);
     return NextResponse.json(
-      { error: "Không thể lấy danh sách công việc. Vui lòng kiểm tra kết nối database." },
+      { error: `Lỗi kết nối cơ sở dữ liệu: ${errorMsg}` },
       { status: 500 }
     );
   }
