@@ -1,53 +1,137 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding sample data to Supabase...");
+  console.log("Seeding sample data for Assignment 2 to Supabase...");
 
-  // Tạo user mẫu
-  const user = await prisma.user.upsert({
+  const defaultPassword = await bcrypt.hash("password123", 10);
+
+  // 1. Tạo user Trưởng nhóm (Admin)
+  const adminUser = await prisma.user.upsert({
     where: { email: "admin@taskpulse.io" },
-    update: {},
+    update: {
+      password: defaultPassword,
+    },
     create: {
       email: "admin@taskpulse.io",
       name: "Nguyễn Văn Admin",
-      password: "hashed_sample_password",
+      password: defaultPassword,
     },
   });
 
-  // Tạo task mẫu
-  const task1 = await prisma.task.create({
-    data: {
-      title: "Thiết lập dự án Next.js & kết nối Prisma Supabase",
-      description: "Hoàn thiện cấu trúc thư mục, định nghĩa schema Prisma và chạy migration thành công.",
-      status: "DONE",
-      priority: "HIGH",
-      dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3), // +3 days
+  // 2. Tạo user Thành viên (Member)
+  const memberUser = await prisma.user.upsert({
+    where: { email: "member@taskpulse.io" },
+    update: {
+      password: defaultPassword,
+    },
+    create: {
+      email: "member@taskpulse.io",
+      name: "Trần Thị Member",
+      password: defaultPassword,
     },
   });
 
-  const task2 = await prisma.task.create({
-    data: {
-      title: "Xây dựng giao diện CRUD Task công khai",
-      description: "Phát triển form tạo task, bảng danh sách, modal chỉnh sửa và nút xóa không cần reload.",
-      status: "IN_PROGRESS",
-      priority: "MEDIUM",
-      dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+  // 3. Tạo Nhóm mẫu
+  let team = await prisma.team.findFirst({
+    where: {
+      name: "Đội Phát Triển TaskPulse (Assignment 2)",
     },
   });
 
-  const task3 = await prisma.task.create({
-    data: {
-      title: "Deploy ứng dụng lên Vercel và cấu hình biến môi trường",
-      description: "Đẩy code lên GitHub và cấu hình DATABASE_URL trên Vercel Dashboard.",
-      status: "TODO",
-      priority: "HIGH",
-      dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
+  if (!team) {
+    team = await prisma.team.create({
+      data: {
+        name: "Đội Phát Triển TaskPulse (Assignment 2)",
+        description: "Không gian làm việc và quản lý công việc dự án cho các thành viên nhóm.",
+        ownerId: adminUser.id,
+      },
+    });
+  }
+
+  // 4. Thêm thành viên vào nhóm mẫu
+  await prisma.teamMember.upsert({
+    where: {
+      teamId_userId: {
+        teamId: team.id,
+        userId: adminUser.id,
+      },
+    },
+    update: { role: "OWNER" },
+    create: {
+      teamId: team.id,
+      userId: adminUser.id,
+      role: "OWNER",
     },
   });
 
-  console.log("Seeding hoàn tất:", { user: user.email, taskCount: 3 });
+  await prisma.teamMember.upsert({
+    where: {
+      teamId_userId: {
+        teamId: team.id,
+        userId: memberUser.id,
+      },
+    },
+    update: { role: "MEMBER" },
+    create: {
+      teamId: team.id,
+      userId: memberUser.id,
+      role: "MEMBER",
+    },
+  });
+
+  // 5. Tạo các task mẫu trong nhóm
+  const existingTasks = await prisma.task.count({
+    where: { teamId: team.id },
+  });
+
+  if (existingTasks === 0) {
+    await prisma.task.create({
+      data: {
+        title: "Thiết lập xác thực JWT & Cookie",
+        description: "Xây dựng hệ thống đăng nhập, đăng ký và middleware bảo vệ các route cho Assignment 2.",
+        status: "DONE",
+        priority: "HIGH",
+        dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2),
+        teamId: team.id,
+        creatorId: adminUser.id,
+        assigneeId: adminUser.id,
+      },
+    });
+
+    await prisma.task.create({
+      data: {
+        title: "Xây dựng Bảng Kanban & Bộ lọc nâng cao",
+        description: "Giao diện quản lý task theo cột trạng thái To Do, In Progress, Done kèm chuyển trạng thái nhanh.",
+        status: "IN_PROGRESS",
+        priority: "MEDIUM",
+        dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5),
+        teamId: team.id,
+        creatorId: adminUser.id,
+        assigneeId: memberUser.id,
+      },
+    });
+
+    await prisma.task.create({
+      data: {
+        title: "Kiểm thử phân quyền RBAC cho Team",
+        description: "Kiểm tra quyền hạn: chỉ Owner mới xóa nhóm, mời thành viên; người tạo/assignee/owner được quyền xóa task.",
+        status: "TODO",
+        priority: "HIGH",
+        dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+        teamId: team.id,
+        creatorId: memberUser.id,
+        assigneeId: adminUser.id,
+      },
+    });
+  }
+
+  console.log("Seeding hoàn tất thành công!");
+  console.log("Tài khoản kiểm thử:");
+  console.log("1. Admin: admin@taskpulse.io / password123 (Vai trò: Owner)");
+  console.log("2. Member: member@taskpulse.io / password123 (Vai trò: Member)");
 }
 
 main()
