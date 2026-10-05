@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, CheckCircle2, Clock, CircleDashed, LayoutGrid } from "lucide-react";
+import { Search } from "lucide-react";
 
 interface TaskFilterProps {
   currentStatus: string;
@@ -23,18 +23,17 @@ export default function TaskFilter({
   counts,
 }: TaskFilterProps) {
   const tabs = [
-    { id: "ALL", label: "Tất cả", count: counts.all, icon: LayoutGrid },
-    { id: "TODO", label: "To Do", count: counts.todo, icon: Clock },
-    { id: "IN_PROGRESS", label: "In Progress", count: counts.inProgress, icon: CircleDashed },
-    { id: "DONE", label: "Done", count: counts.done, icon: CheckCircle2 },
+    { id: "ALL", label: "Tất cả", count: counts.all },
+    { id: "TODO", label: "Cần làm", count: counts.todo },
+    { id: "IN_PROGRESS", label: "Đang làm", count: counts.inProgress },
+    { id: "DONE", label: "Hoàn thành", count: counts.done },
   ];
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-      {/* Status Filter Tabs */}
-      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 overflow-x-auto">
+      {/* Status Filter Tabs (Monochrome B&W) */}
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-900 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 overflow-x-auto">
         {tabs.map((tab) => {
-          const Icon = tab.icon;
           const isActive = currentStatus === tab.id;
           return (
             <button
@@ -42,17 +41,16 @@ export default function TaskFilter({
               onClick={() => onStatusChange(tab.id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 isActive
-                  ? "bg-white text-blue-700 shadow-xs dark:bg-slate-900 dark:text-blue-300"
-                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                  ? "bg-black text-white dark:bg-white dark:text-black shadow-2xs"
+                  : "text-zinc-600 hover:text-black dark:text-zinc-400 dark:hover:text-white"
               }`}
             >
-              <Icon className="h-3.5 w-3.5" />
               <span>{tab.label}</span>
               <span
-                className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] ${
+                className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                   isActive
-                    ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
-                    : "bg-slate-200/80 text-slate-600 dark:bg-slate-700 dark:text-slate-400"
+                    ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-black"
+                    : "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
                 }`}
               >
                 {tab.count}
@@ -64,13 +62,15 @@ export default function TaskFilter({
 
       {/* Search Input */}
       <div className="relative w-full sm:w-64">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400">
+          <Search className="h-3.5 w-3.5" />
+        </div>
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Tìm kiếm công việc..."
-          className="w-full pl-9 pr-3.5 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:placeholder-slate-500 transition-colors"
+          className="w-full pl-9 pr-3.5 py-1.5 rounded-xl border border-zinc-300 bg-white text-black text-xs placeholder-zinc-400 focus:outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:placeholder-zinc-500 shadow-2xs"
         />
       </div>
     </div>

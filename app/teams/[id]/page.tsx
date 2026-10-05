@@ -407,10 +407,9 @@ export default function TeamDetailPage({
       <div className="flex items-center justify-between">
         <Link
           href="/teams"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
+          className="text-xs font-semibold text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Danh sách các nhóm</span>
+          ← Danh sách các nhóm
         </Link>
 
         {/* Owner Settings Actions */}
@@ -418,46 +417,42 @@ export default function TeamDetailPage({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsEditTeamOpen(true)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 dark:border-slate-800 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+              className="btn-3d-secondary px-3 py-1.5 text-xs font-semibold cursor-pointer"
             >
-              <Edit2 className="h-3.5 w-3.5" />
               <span>Sửa nhóm</span>
             </button>
             <button
               onClick={handleDeleteTeam}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 dark:border-rose-900/50 dark:bg-rose-950/40 dark:hover:bg-rose-950 text-xs font-semibold text-rose-700 dark:text-rose-300 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-xl border border-zinc-300 bg-white hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900 text-xs font-semibold text-zinc-600 hover:text-rose-600 dark:text-zinc-400 dark:hover:text-rose-400 transition-colors cursor-pointer"
             >
-              <Trash2 className="h-3.5 w-3.5" />
               <span>Xóa nhóm</span>
             </button>
           </div>
         )}
       </div>
 
-      {/* Team Header Banner */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Team Header Banner (3D Card Surface) */}
+      <div className="card-3d rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-black dark:text-white tracking-tight">
               {team.name}
             </h1>
             {isOwner ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-300">
-                <Crown className="h-3.5 w-3.5 text-amber-500" />
-                <span>Trưởng nhóm (Owner)</span>
+              <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-bold bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white">
+                Trưởng nhóm
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-300">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                <span>Thành viên (Member)</span>
+              <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-800 border border-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700">
+                Thành viên
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
-            {team.description || "Chưa có mô tả cho nhóm này."}
+          <p className="mt-1 text-xs sm:text-sm text-zinc-500 max-w-2xl">
+            {team.description || "Chưa có mô tả cho nhóm."}
           </p>
-          <div className="mt-3 flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
-            <span>Tạo bởi: <strong className="text-slate-700 dark:text-slate-300">{team.owner.name}</strong></span>
+          <div className="mt-3 flex items-center gap-3 text-xs text-zinc-400">
+            <span>Tạo bởi: <strong className="text-zinc-700 dark:text-zinc-300">{team.owner.name}</strong></span>
             <span>•</span>
             <span>{team.members.length} thành viên</span>
             <span>•</span>
@@ -469,39 +464,36 @@ export default function TeamDetailPage({
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={openCreateTask}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer active:scale-95"
+            className="btn-3d-primary px-4 py-2.5 text-xs font-semibold cursor-pointer inline-flex items-center justify-center"
           >
-            <Plus className="h-4 w-4" />
-            <span>Tạo Task Mới</span>
+            <span>Tạo công việc</span>
           </button>
         </div>
       </div>
 
       {/* Tabs Switcher: Tasks vs Members */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
+      <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex gap-4">
           <button
             onClick={() => setActiveTab("tasks")}
-            className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`pb-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer ${
               activeTab === "tasks"
-                ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                ? "border-black text-black dark:border-white dark:text-white"
+                : "border-transparent text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white"
             }`}
           >
-            <CheckSquare className="h-4 w-4" />
-            <span>Danh sách Công việc ({team.tasks.length})</span>
+            <span>Công việc ({team.tasks.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab("members")}
-            className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`pb-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer ${
               activeTab === "members"
-                ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                ? "border-black text-black dark:border-white dark:text-white"
+                : "border-transparent text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white"
             }`}
           >
-            <Users className="h-4 w-4" />
-            <span>Thành viên Nhóm ({team.members.length})</span>
+            <span>Thành viên ({team.members.length})</span>
           </button>
         </div>
 
@@ -510,22 +502,22 @@ export default function TeamDetailPage({
           <div className="flex items-center gap-1 pb-2">
             <button
               onClick={() => setViewMode("board")}
-              title="Xem dạng Bảng Kanban"
-              className={`p-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+              title="Dạng Bảng Kanban"
+              className={`p-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 viewMode === "board"
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                  : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  ? "bg-black text-white dark:bg-white dark:text-black"
+                  : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
             >
               <Kanban className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode("table")}
-              title="Xem dạng Danh sách / Bảng"
-              className={`p-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+              title="Dạng Danh sách"
+              className={`p-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 viewMode === "table"
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                  : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  ? "bg-black text-white dark:bg-white dark:text-black"
+                  : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
             >
               <TableIcon className="h-4 w-4" />
@@ -540,16 +532,15 @@ export default function TeamDetailPage({
       {activeTab === "tasks" && (
         <div className="space-y-4">
           {/* Filters Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xs">
             {/* Search Input */}
             <div className="relative">
-              <Search className="pointer-events-none absolute inset-y-0 left-0 my-auto ml-3 h-3.5 w-3.5 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm task theo tên hoặc mô tả..."
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                placeholder="Tìm kiếm công việc..."
+                className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-3 text-xs text-black outline-none transition-all placeholder:text-zinc-400 focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:placeholder:text-zinc-500 shadow-2xs"
               />
             </div>
 
@@ -557,38 +548,38 @@ export default function TeamDetailPage({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-slate-50 py-1.5 px-3 text-xs text-slate-900 outline-none transition-all focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="rounded-xl border border-zinc-300 bg-white py-2 px-3 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white shadow-2xs"
             >
-              <option value="ALL">Mọi Trạng Thái</option>
-              <option value="TODO">To Do (Chưa thực hiện)</option>
-              <option value="IN_PROGRESS">In Progress (Đang làm)</option>
-              <option value="DONE">Done (Đã hoàn thành)</option>
+              <option value="ALL">Mọi trạng thái</option>
+              <option value="TODO">Cần làm</option>
+              <option value="IN_PROGRESS">Đang làm</option>
+              <option value="DONE">Hoàn thành</option>
             </select>
 
             {/* Priority Filter */}
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-slate-50 py-1.5 px-3 text-xs text-slate-900 outline-none transition-all focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="rounded-xl border border-zinc-300 bg-white py-2 px-3 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white shadow-2xs"
             >
-              <option value="ALL">Mọi Mức Ưu Tiên</option>
-              <option value="HIGH">High (Ưu tiên cao)</option>
-              <option value="MEDIUM">Medium (Trung bình)</option>
-              <option value="LOW">Low (Thấp)</option>
+              <option value="ALL">Mọi ưu tiên</option>
+              <option value="HIGH">Cao</option>
+              <option value="MEDIUM">Trung bình</option>
+              <option value="LOW">Thấp</option>
             </select>
 
             {/* Assignee Filter */}
             <select
               value={assigneeFilter}
               onChange={(e) => setAssigneeFilter(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-slate-50 py-1.5 px-3 text-xs text-slate-900 outline-none transition-all focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="rounded-xl border border-zinc-300 bg-white py-2 px-3 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white shadow-2xs"
             >
-              <option value="ALL">Tất cả người phụ trách</option>
+              <option value="ALL">Tất cả thành viên</option>
               <option value="ME">Công việc của tôi</option>
               <option value="UNASSIGNED">Chưa phân công</option>
               {team.members.map((m) => (
                 <option key={m.userId} value={m.userId}>
-                  {m.user.name} ({m.role})
+                  {m.user.name} ({m.role === "OWNER" ? "Trưởng nhóm" : "Thành viên"})
                 </option>
               ))}
             </select>
@@ -596,49 +587,46 @@ export default function TeamDetailPage({
 
           {/* Empty tasks state */}
           {filteredTasks.length === 0 ? (
-            <div className="py-16 text-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40">
-              <CheckSquare className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600 mb-2" />
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Không tìm thấy công việc nào</p>
-              <p className="text-xs text-slate-500 mt-1">
+            <div className="py-16 text-center rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 bg-white/40 dark:bg-zinc-950/40 backdrop-blur-sm">
+              <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Không tìm thấy công việc nào</p>
+              <p className="text-xs text-zinc-500 mt-1">
                 {team.tasks.length === 0
-                  ? "Hãy bấm 'Tạo Task Mới' để bắt đầu giao việc cho thành viên."
-                  : "Thử điều chỉnh lại bộ lọc hoặc từ khóa tìm kiếm."}
+                  ? "Bấm 'Tạo công việc' để bắt đầu giao việc cho thành viên."
+                  : "Thử điều chỉnh lại bộ lọc."}
               </p>
             </div>
           ) : viewMode === "board" ? (
             /* ========================================== */
-            /* KANBAN BOARD VIEW (Bonus Feature)          */
+            /* KANBAN BOARD VIEW (3D Columns & Cards)     */
             /* ========================================== */
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {(["TODO", "IN_PROGRESS", "DONE"] as const).map((colStatus) => {
                 const columnTasks = filteredTasks.filter((t) => t.status === colStatus);
                 const colTitle =
                   colStatus === "TODO"
-                    ? "To Do (Cần làm)"
+                    ? "Cần làm"
                     : colStatus === "IN_PROGRESS"
-                    ? "In Progress (Đang thực hiện)"
-                    : "Done (Đã hoàn thành)";
+                    ? "Đang làm"
+                    : "Hoàn thành";
 
                 const colColor =
                   colStatus === "TODO"
-                    ? "border-amber-300/80 bg-amber-50/40 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400"
+                    ? "border-zinc-300 bg-zinc-100 text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
                     : colStatus === "IN_PROGRESS"
-                    ? "border-blue-300/80 bg-blue-50/40 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400"
-                    : "border-emerald-300/80 bg-emerald-50/40 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400";
+                    ? "border-zinc-400 bg-zinc-200 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                    : "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black";
 
                 return (
                   <div
                     key={colStatus}
-                    className="flex flex-col rounded-2xl border border-slate-200 bg-slate-100/60 dark:border-slate-800 dark:bg-slate-900/50 p-4 min-h-[450px]"
+                    className="flex flex-col rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/50 backdrop-blur-sm p-4 min-h-[460px] shadow-2xs"
                   >
                     {/* Column Header */}
-                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200 dark:border-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${colColor}`}>
-                          {colTitle}
-                        </span>
-                      </div>
-                      <span className="text-xs font-semibold text-slate-400">{columnTasks.length}</span>
+                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-zinc-200 dark:border-zinc-800">
+                      <span className={`pill-3d px-2.5 py-0.5 rounded-full text-xs font-bold border ${colColor}`}>
+                        {colTitle}
+                      </span>
+                      <span className="text-xs font-bold text-zinc-400">{columnTasks.length}</span>
                     </div>
 
                     {/* Column Task Cards */}
@@ -651,68 +639,74 @@ export default function TeamDetailPage({
 
                         const priorityBadge =
                           task.priority === "HIGH"
-                            ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400"
+                            ? "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white font-bold"
                             : task.priority === "MEDIUM"
-                            ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-400"
-                            : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300";
+                            ? "bg-zinc-200 text-zinc-800 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 font-semibold"
+                            : "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800";
+
+                        const priorityLabel =
+                          task.priority === "HIGH"
+                            ? "Cao"
+                            : task.priority === "MEDIUM"
+                            ? "Trung bình"
+                            : "Thấp";
 
                         return (
                           <div
                             key={task.id}
-                            className="group rounded-xl border border-slate-200 bg-white p-4 shadow-xs hover:shadow-md dark:border-slate-800 dark:bg-slate-900 transition-all flex flex-col justify-between"
+                            className="card-3d group rounded-2xl p-4 transition-all flex flex-col justify-between"
                           >
                             <div>
                               <div className="flex items-start justify-between gap-2 mb-2">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${priorityBadge}`}>
-                                  {task.priority}
+                                <span className={`pill-3d px-2 py-0.5 rounded text-[10px] border ${priorityBadge}`}>
+                                  {priorityLabel}
                                 </span>
 
                                 <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                                   <button
                                     onClick={() => openEditTask(task)}
-                                    title="Chỉnh sửa task"
-                                    className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer"
+                                    title="Sửa công việc"
+                                    className="px-2 py-0.5 rounded-md text-[11px] font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 cursor-pointer"
                                   >
-                                    <Edit2 className="h-3.5 w-3.5" />
+                                    Sửa
                                   </button>
                                   {canDelete && (
                                     <button
                                       onClick={() => handleDeleteTask(task)}
-                                      title="Xóa task (Quyền: Người tạo, Người làm hoặc Owner)"
-                                      className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 cursor-pointer"
+                                      title="Xóa công việc"
+                                      className="px-2 py-0.5 rounded-md text-[11px] font-semibold text-zinc-500 hover:text-rose-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
                                     >
-                                      <Trash2 className="h-3.5 w-3.5" />
+                                      Xóa
                                     </button>
                                   )}
                                 </div>
                               </div>
 
-                              <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                              <h4 className="text-sm font-bold text-black dark:text-white leading-snug">
                                 {task.title}
                               </h4>
                               {task.description && (
-                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2">
                                   {task.description}
                                 </p>
                               )}
                             </div>
 
-                            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-col gap-2">
+                            <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex flex-col gap-2">
                               {/* Assignee & Due Date */}
-                              <div className="flex items-center justify-between text-[11px] text-slate-500">
-                                <div className="flex items-center gap-1.5" title={`Người làm: ${task.assignee?.name || "Chưa phân công"}`}>
-                                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 font-bold text-[10px]">
+                              <div className="flex items-center justify-between text-[11px] text-zinc-500">
+                                <div className="flex items-center gap-1.5" title={`Phụ trách: ${task.assignee?.name || "Chưa phân công"}`}>
+                                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black font-bold text-[10px]">
                                     {task.assignee ? task.assignee.name.charAt(0) : "?"}
                                   </div>
-                                  <span className="truncate max-w-[90px]">
+                                  <span className="truncate max-w-[90px] font-medium">
                                     {task.assignee ? task.assignee.name : "Chưa gán"}
                                   </span>
                                 </div>
 
                                 {task.dueDate && (
-                                  <div className="flex items-center gap-1 text-slate-400">
-                                    <Calendar className="h-3 w-3" />
-                                    <span>{new Date(task.dueDate).toLocaleDateString("vi-VN")}</span>
+                                  <div className="text-zinc-500 dark:text-zinc-400 font-medium">
+                                    <span>Hạn: {new Date(task.dueDate).toLocaleDateString("vi-VN")}</span>
                                   </div>
                                 )}
                               </div>
@@ -722,25 +716,25 @@ export default function TeamDetailPage({
                                 {colStatus !== "TODO" && (
                                   <button
                                     onClick={() => handleQuickStatusChange(task, "TODO")}
-                                    className="px-2 py-0.5 text-[10px] font-semibold rounded bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-800 dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
+                                    className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black cursor-pointer transition-colors"
                                   >
-                                    ← To Do
+                                    Cần làm
                                   </button>
                                 )}
                                 {colStatus !== "IN_PROGRESS" && (
                                   <button
                                     onClick={() => handleQuickStatusChange(task, "IN_PROGRESS")}
-                                    className="px-2 py-0.5 text-[10px] font-semibold rounded bg-slate-100 text-slate-600 hover:bg-blue-100 hover:text-blue-800 dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
+                                    className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black cursor-pointer transition-colors"
                                   >
-                                    In Progress
+                                    Đang làm
                                   </button>
                                 )}
                                 {colStatus !== "DONE" && (
                                   <button
                                     onClick={() => handleQuickStatusChange(task, "DONE")}
-                                    className="px-2 py-0.5 text-[10px] font-semibold rounded bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-800 dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
+                                    className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black cursor-pointer transition-colors"
                                   >
-                                    Done ✓
+                                    Hoàn thành
                                   </button>
                                 )}
                               </div>
@@ -757,10 +751,10 @@ export default function TeamDetailPage({
             /* ========================================== */
             /* TABLE / LIST VIEW                          */
             /* ========================================== */
-            <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden shadow-xs">
+            <div className="card-3d rounded-2xl overflow-hidden shadow-2xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200 dark:border-slate-800">
+                  <thead className="bg-zinc-50 dark:bg-zinc-950 text-zinc-500 uppercase tracking-wider font-bold border-b border-zinc-200 dark:border-zinc-800 text-[10px]">
                     <tr>
                       <th className="py-3 px-4">Công việc</th>
                       <th className="py-3 px-4">Trạng thái</th>
@@ -770,74 +764,86 @@ export default function TeamDetailPage({
                       <th className="py-3 px-4 text-right">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
                     {filteredTasks.map((task) => {
                       const canDelete =
                         user?.id === task.creatorId ||
                         user?.id === task.assigneeId ||
                         user?.id === team.ownerId;
 
+                      const statusLabel =
+                        task.status === "DONE"
+                          ? "Hoàn thành"
+                          : task.status === "IN_PROGRESS"
+                          ? "Đang làm"
+                          : "Cần làm";
+
                       const statusBadge =
                         task.status === "DONE"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400"
+                          ? "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white font-bold"
                           : task.status === "IN_PROGRESS"
-                          ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-400"
-                          : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-400";
+                          ? "bg-zinc-200 text-zinc-900 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700"
+                          : "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:border-zinc-800";
+
+                      const priorityLabel =
+                        task.priority === "HIGH"
+                          ? "Cao"
+                          : task.priority === "MEDIUM"
+                          ? "Trung bình"
+                          : "Thấp";
 
                       const priorityBadge =
                         task.priority === "HIGH"
-                          ? "text-rose-600 font-bold"
+                          ? "text-black dark:text-white font-bold"
                           : task.priority === "MEDIUM"
-                          ? "text-amber-600 font-semibold"
-                          : "text-slate-500";
+                          ? "text-zinc-700 dark:text-zinc-300 font-semibold"
+                          : "text-zinc-400";
 
                       return (
-                        <tr key={task.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
-                          <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white max-w-xs">
+                        <tr key={task.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40 transition-colors">
+                          <td className="py-3.5 px-4 font-semibold text-black dark:text-white max-w-xs">
                             <p className="truncate">{task.title}</p>
                             {task.description && (
-                              <p className="text-[11px] font-normal text-slate-400 truncate">{task.description}</p>
+                              <p className="text-[11px] font-normal text-zinc-400 truncate">{task.description}</p>
                             )}
                           </td>
                           <td className="py-3.5 px-4">
-                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${statusBadge}`}>
-                              {task.status}
+                            <span className={`pill-3d px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBadge}`}>
+                              {statusLabel}
                             </span>
                           </td>
                           <td className="py-3.5 px-4">
-                            <span className={priorityBadge}>{task.priority}</span>
+                            <span className={priorityBadge}>{priorityLabel}</span>
                           </td>
-                          <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
+                          <td className="py-3.5 px-4 text-zinc-700 dark:text-zinc-300">
                             {task.assignee ? (
                               <div className="flex items-center gap-1.5">
-                                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold text-[10px]">
+                                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black font-bold text-[10px]">
                                   {task.assignee.name.charAt(0)}
                                 </div>
-                                <span>{task.assignee.name}</span>
+                                <span className="font-medium">{task.assignee.name}</span>
                               </div>
                             ) : (
-                              <span className="text-slate-400 italic">Chưa gán</span>
+                              <span className="text-zinc-400 italic">Chưa gán</span>
                             )}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-500">
+                          <td className="py-3.5 px-4 text-zinc-500">
                             {task.dueDate ? new Date(task.dueDate).toLocaleDateString("vi-VN") : "—"}
                           </td>
                           <td className="py-3.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-2">
+                            <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => openEditTask(task)}
-                                className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-slate-100 cursor-pointer"
-                                title="Sửa task"
+                                className="px-2 py-1 rounded-md text-xs font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 cursor-pointer"
                               >
-                                <Edit2 className="h-4 w-4" />
+                                Sửa
                               </button>
                               {canDelete && (
                                 <button
                                   onClick={() => handleDeleteTask(task)}
-                                  className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-slate-100 cursor-pointer"
-                                  title="Xóa task"
+                                  className="px-2 py-1 rounded-md text-xs font-semibold text-zinc-500 hover:text-rose-600 hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  Xóa
                                 </button>
                               )}
                             </div>
@@ -860,24 +866,23 @@ export default function TeamDetailPage({
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Danh sách Thành viên</h3>
-              <p className="text-xs text-slate-500">Thành viên có quyền xem, tạo và cập nhật công việc trong nhóm.</p>
+              <h3 className="text-base font-bold text-black dark:text-white">Thành viên nhóm</h3>
+              <p className="text-xs text-zinc-500">Danh sách các thành viên cùng tham gia nhóm làm việc.</p>
             </div>
 
             {/* Owner Add Member Button */}
             {isOwner && (
               <button
                 onClick={() => setIsAddMemberOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+                className="btn-3d-primary px-3.5 py-2 text-xs font-semibold cursor-pointer inline-flex items-center justify-center"
               >
-                <UserPlus className="h-4 w-4" />
-                <span>Mời Thành Viên Bằng Email</span>
+                <span>Mời thành viên</span>
               </button>
             )}
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden shadow-xs">
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="card-3d rounded-2xl overflow-hidden shadow-2xs">
+            <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {team.members.map((m) => {
                 const isMemberOwner = m.role === "OWNER" || m.userId === team.ownerId;
                 const isCurrent = m.userId === user?.id;
@@ -885,32 +890,30 @@ export default function TeamDetailPage({
                 return (
                   <div key={m.id} className="p-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white font-bold text-sm uppercase shadow-sm">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-white dark:bg-white dark:text-black font-bold text-sm uppercase shadow-2xs">
                         {m.user.name.charAt(0)}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-bold text-slate-900 dark:text-white">{m.user.name}</p>
+                          <p className="text-sm font-bold text-black dark:text-white">{m.user.name}</p>
                           {isCurrent && (
-                            <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                            <span className="text-[10px] font-semibold bg-zinc-200 text-black dark:bg-zinc-800 dark:text-white px-1.5 py-0.5 rounded">
                               Bạn
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{m.user.email}</p>
+                        <p className="text-xs text-zinc-500">{m.user.email}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
                       {isMemberOwner ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-300">
-                          <Crown className="h-3 w-3 text-amber-500" />
-                          <span>Owner</span>
+                        <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-bold bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white">
+                          Trưởng nhóm
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
-                          <ShieldCheck className="h-3 w-3 text-emerald-500" />
-                          <span>Member</span>
+                        <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-800 border border-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700">
+                          Thành viên
                         </span>
                       )}
 
@@ -918,10 +921,9 @@ export default function TeamDetailPage({
                       {isOwner && !isMemberOwner && (
                         <button
                           onClick={() => handleRemoveMember(m.userId, m.user.name)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                          title="Xóa thành viên khỏi nhóm"
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold text-zinc-500 hover:text-rose-600 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          Xóa
                         </button>
                       )}
 
@@ -929,9 +931,8 @@ export default function TeamDetailPage({
                       {!isOwner && isCurrent && (
                         <button
                           onClick={() => handleRemoveMember(m.userId, m.user.name)}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-600 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 cursor-pointer"
                         >
-                          <LogOut className="h-3.5 w-3.5" />
                           <span>Rời nhóm</span>
                         </button>
                       )}
@@ -944,138 +945,138 @@ export default function TeamDetailPage({
         </div>
       )}
 
+
       {/* ============================================================== */}
       {/* MODAL 1: CREATE / EDIT TASK                                    */}
       {/* ============================================================== */}
       {isTaskModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="relative w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                {editingTask ? "Chỉnh sửa Công việc" : "Tạo Công việc Mới"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="card-3d relative w-full max-w-lg rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+            <div className="flex items-center justify-between pb-3.5 border-b border-zinc-200 dark:border-zinc-800">
+              <h3 className="text-base font-bold text-black dark:text-white tracking-tight">
+                {editingTask ? "Chỉnh sửa công việc" : "Tạo công việc mới"}
               </h3>
               <button
                 onClick={() => setIsTaskModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 dark:hover:text-white dark:hover:bg-zinc-900 cursor-pointer"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             {taskError && (
-              <div className="mt-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/40">
-                <AlertCircle className="h-4 w-4 shrink-0" />
+              <div className="mt-4 rounded-xl border border-zinc-300 bg-zinc-100 p-3 text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
                 <span>{taskError}</span>
               </div>
             )}
 
             <form onSubmit={handleSaveTask} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Tiêu đề công việc <span className="text-rose-500">*</span>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  Tiêu đề <span className="text-black dark:text-white">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={taskTitle}
                   onChange={(e) => setTaskTitle(e.target.value)}
-                  placeholder="Ví dụ: Thiết kế cơ sở dữ liệu cho tính năng Auth..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                  placeholder="Ví dụ: Thiết kế giao diện Dashboard..."
+                  className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-3 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:placeholder:text-zinc-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Mô tả chi tiết
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  Mô tả
                 </label>
                 <textarea
                   rows={3}
                   value={taskDesc}
                   onChange={(e) => setTaskDesc(e.target.value)}
-                  placeholder="Mô tả cụ thể yêu cầu, tài liệu tham khảo..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 resize-none"
+                  placeholder="Chi tiết công việc..."
+                  className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-3 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:placeholder:text-zinc-500 resize-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
                     Trạng thái
                   </label>
                   <select
                     value={taskStatus}
                     onChange={(e) => setTaskStatus(e.target.value as "TODO" | "IN_PROGRESS" | "DONE")}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-2.5 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                   >
-                    <option value="TODO">To Do (Chưa thực hiện)</option>
-                    <option value="IN_PROGRESS">In Progress (Đang làm)</option>
-                    <option value="DONE">Done (Đã hoàn thành)</option>
+                    <option value="TODO">Cần làm</option>
+                    <option value="IN_PROGRESS">Đang làm</option>
+                    <option value="DONE">Hoàn thành</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Mức độ ưu tiên
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Ưu tiên
                   </label>
                   <select
                     value={taskPriority}
                     onChange={(e) => setTaskPriority(e.target.value as "LOW" | "MEDIUM" | "HIGH")}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-2.5 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                   >
-                    <option value="LOW">Low (Thấp)</option>
-                    <option value="MEDIUM">Medium (Trung bình)</option>
-                    <option value="HIGH">High (Khẩn cấp / Cao)</option>
+                    <option value="LOW">Thấp</option>
+                    <option value="MEDIUM">Trung bình</option>
+                    <option value="HIGH">Cao</option>
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Phân công cho thành viên
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Phân công
                   </label>
                   <select
                     value={taskAssigneeId}
                     onChange={(e) => setTaskAssigneeId(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-2.5 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                   >
-                    <option value="">-- Chưa gán ai --</option>
+                    <option value="">-- Chưa phân công --</option>
                     {team.members.map((m) => (
                       <option key={m.userId} value={m.userId}>
-                        {m.user.name} ({m.role})
+                        {m.user.name} ({m.role === "OWNER" ? "Trưởng nhóm" : "Thành viên"})
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Hạn chót hoàn thành
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Hạn chót
                   </label>
                   <input
                     type="date"
                     value={taskDueDate}
                     onChange={(e) => setTaskDueDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    className="w-full rounded-xl border border-zinc-300 bg-white py-1.5 px-2.5 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                   />
                 </div>
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-zinc-200 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setIsTaskModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                  className="btn-3d-secondary px-4 py-2 text-xs cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={taskSubmitting || !taskTitle.trim()}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm disabled:opacity-50 cursor-pointer"
+                  className="btn-3d-primary px-4 py-2 text-xs disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
                 >
                   {taskSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  <span>{taskSubmitting ? "Đang lưu..." : editingTask ? "Cập nhật" : "Tạo công việc"}</span>
+                  <span>{taskSubmitting ? "Đang lưu..." : editingTask ? "Lưu thay đổi" : "Tạo công việc"}</span>
                 </button>
               </div>
             </form>
@@ -1087,29 +1088,30 @@ export default function TeamDetailPage({
       {/* MODAL 2: ADD TEAM MEMBER BY EMAIL                              */}
       {/* ============================================================== */}
       {isAddMemberOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Thêm Thành Viên Vào Nhóm</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="card-3d relative w-full max-w-md rounded-2xl p-6 shadow-2xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+            <div className="flex items-center justify-between pb-3.5 border-b border-zinc-200 dark:border-zinc-800">
+              <h3 className="text-base font-bold text-black dark:text-white tracking-tight">
+                Mời thành viên
+              </h3>
               <button
                 onClick={() => setIsAddMemberOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="p-1.5 rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-900 dark:hover:text-white cursor-pointer"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             {memberError && (
-              <div className="mt-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/40">
-                <AlertCircle className="h-4 w-4 shrink-0" />
+              <div className="mt-4 rounded-xl border border-zinc-300 bg-zinc-100 p-3 text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
                 <span>{memberError}</span>
               </div>
             )}
 
             <form onSubmit={handleAddMember} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Địa chỉ Email của thành viên <span className="text-rose-500">*</span>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  Email thành viên <span className="text-black dark:text-white">*</span>
                 </label>
                 <input
                   type="email"
@@ -1117,10 +1119,10 @@ export default function TeamDetailPage({
                   value={memberEmail}
                   onChange={(e) => setMemberEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                  className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-3 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:placeholder:text-zinc-500"
                 />
-                <p className="mt-1.5 text-[11px] text-slate-400">
-                  Lưu ý: Thành viên cần đã có tài khoản trên hệ thống để được thêm vào nhóm.
+                <p className="mt-1.5 text-[11px] text-zinc-400">
+                  Thành viên cần có tài khoản trên hệ thống để được thêm vào nhóm.
                 </p>
               </div>
 
@@ -1128,14 +1130,14 @@ export default function TeamDetailPage({
                 <button
                   type="button"
                   onClick={() => setIsAddMemberOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                  className="btn-3d-secondary px-4 py-2 text-xs cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={memberSubmitting || !memberEmail.trim()}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm disabled:opacity-50 cursor-pointer"
+                  className="btn-3d-primary px-4 py-2 text-xs disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
                 >
                   {memberSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   <span>{memberSubmitting ? "Đang thêm..." : "Thêm vào nhóm"}</span>
@@ -1150,41 +1152,43 @@ export default function TeamDetailPage({
       {/* MODAL 3: EDIT TEAM INFO (OWNER ONLY)                           */}
       {/* ============================================================== */}
       {isEditTeamOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Cập nhật Thông tin Nhóm</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="card-3d relative w-full max-w-md rounded-2xl p-6 shadow-2xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+            <div className="flex items-center justify-between pb-3.5 border-b border-zinc-200 dark:border-zinc-800">
+              <h3 className="text-base font-bold text-black dark:text-white tracking-tight">
+                Cập nhật thông tin nhóm
+              </h3>
               <button
                 onClick={() => setIsEditTeamOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="p-1.5 rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-900 dark:hover:text-white cursor-pointer"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             <form onSubmit={handleUpdateTeam} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Tên nhóm <span className="text-rose-500">*</span>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  Tên nhóm <span className="text-black dark:text-white">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={teamNameEdit}
                   onChange={(e) => setTeamNameEdit(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-3 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
                   Mô tả nhóm
                 </label>
                 <textarea
                   rows={3}
                   value={teamDescEdit}
                   onChange={(e) => setTeamDescEdit(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-white resize-none"
+                  className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-3 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white resize-none"
                 />
               </div>
 
@@ -1192,14 +1196,14 @@ export default function TeamDetailPage({
                 <button
                   type="button"
                   onClick={() => setIsEditTeamOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                  className="btn-3d-secondary px-4 py-2 text-xs cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={teamSubmitting || !teamNameEdit.trim()}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm disabled:opacity-50 cursor-pointer"
+                  className="btn-3d-primary px-4 py-2 text-xs disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
                 >
                   {teamSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   <span>{teamSubmitting ? "Đang lưu..." : "Lưu thay đổi"}</span>

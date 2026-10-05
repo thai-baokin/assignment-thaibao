@@ -7,13 +7,7 @@ import TaskCard from "@/components/TaskCard";
 import TaskEditModal from "@/components/TaskEditModal";
 import TaskFilter from "@/components/TaskFilter";
 import { TaskItem, CreateTaskInput, UpdateTaskInput } from "@/lib/types";
-import { 
-  AlertCircle, 
-  Loader2, 
-  Sparkles, 
-  RefreshCw, 
-  Inbox
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export default function HomePage() {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
@@ -45,7 +39,7 @@ export default function HomePage() {
       const res = await fetch("/api/tasks");
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
-        throw new Error(errData?.error || "Không thể kết nối tới cơ sở dữ liệu. Vui lòng kiểm tra DATABASE_URL.");
+        throw new Error(errData?.error || "Không thể kết nối cơ sở dữ liệu.");
       }
       const data = await res.json();
       setTasks(data);
@@ -65,7 +59,7 @@ export default function HomePage() {
       .then(async (res) => {
         if (!res.ok) {
           const errData = await res.json().catch(() => null);
-          throw new Error(errData?.error || "Không thể kết nối tới cơ sở dữ liệu. Vui lòng kiểm tra DATABASE_URL.");
+          throw new Error(errData?.error || "Không thể kết nối cơ sở dữ liệu.");
         }
         return res.json();
       })
@@ -103,9 +97,8 @@ export default function HomePage() {
       }
 
       const newTask = await res.json();
-      // Update UI automatically without manual page reload
       setTasks((prev) => [newTask, ...prev]);
-      showToast("Tạo công việc mới thành công! 🎉");
+      showToast("Tạo công việc thành công");
       return true;
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Tạo thất bại");
@@ -128,9 +121,8 @@ export default function HomePage() {
       }
 
       const updated = await res.json();
-      // Update UI state directly
       setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
-      showToast("Cập nhật công việc thành công! ✨");
+      showToast("Cập nhật công việc thành công");
       return true;
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Cập nhật thất bại");
@@ -155,9 +147,8 @@ export default function HomePage() {
         throw new Error(errData.error || "Lỗi khi xóa công việc.");
       }
 
-      // Remove from UI state directly
       setTasks((prev) => prev.filter((t) => t.id !== id));
-      showToast("Đã xóa công việc khỏi danh sách.");
+      showToast("Đã xóa công việc khỏi danh sách");
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Xóa thất bại");
     }
@@ -196,25 +187,23 @@ export default function HomePage() {
     <div className="flex-1 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-900 text-white text-sm shadow-xl dark:bg-white dark:text-slate-900 animate-in slide-in-from-bottom-3 duration-200">
-          <Sparkles className="h-4 w-4 text-amber-400" />
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl bg-black text-white text-xs font-semibold shadow-2xl dark:bg-white dark:text-black animate-in slide-in-from-bottom-3 duration-200">
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Hero / Introduction Section */}
+      {/* Hero / Introduction Section (Monochrome B&W) */}
       <section className="mb-10 text-center sm:text-left">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 dark:bg-indigo-950/60 dark:border-indigo-800 dark:text-indigo-300 text-xs font-semibold mb-3">
-              <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
-              <span>Assignment 2: Authentication & Team Workspace</span>
+            <div className="pill-3d inline-flex items-center px-3 py-1 rounded-full bg-zinc-100 border border-zinc-300 text-zinc-900 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-100 text-xs font-semibold mb-3">
+              <span>Không gian làm việc</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Task & Team Management
+            <h1 className="text-3xl sm:text-4xl font-black text-black dark:text-white tracking-tight">
+              Quản lý Công việc & Đội ngũ
             </h1>
-            <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-              Hệ thống quản lý công việc và nhóm làm việc. Đăng nhập để tạo nhóm, mời thành viên theo email, phân công công việc và quản lý task trên bảng Kanban.
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 max-w-2xl leading-relaxed">
+              Theo dõi tiến độ công việc, phân công nhiệm vụ và phối hợp nhóm hiệu quả.
             </p>
           </div>
 
@@ -222,39 +211,38 @@ export default function HomePage() {
           <div className="flex items-center justify-center sm:justify-end gap-2.5 flex-wrap">
             <Link
               href="/teams"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+              className="btn-3d-primary px-4 py-2 text-xs tracking-tight cursor-pointer inline-flex items-center justify-center"
             >
-              <span>Vào Không Gian Nhóm</span>
-              <span>→</span>
+              <span>Không gian nhóm</span>
             </Link>
             <button
               onClick={refreshTasks}
               disabled={isLoading}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+              className="btn-3d-secondary px-3.5 py-2 text-xs tracking-tight cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-              <span>Đồng bộ DB</span>
+              {isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              <span>Làm mới</span>
             </button>
           </div>
         </div>
 
-        {/* Quick Stats Grid */}
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 shadow-2xs">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Tổng công việc</p>
-            <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{counts.all}</p>
+        {/* Quick Stats Grid (Monochrome 3D Stat Cards) */}
+        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+          <div className="stat-3d rounded-2xl p-4">
+            <p className="text-xs font-semibold text-zinc-500">Tổng số</p>
+            <p className="mt-1 text-2xl font-black text-black dark:text-white tracking-tight">{counts.all}</p>
           </div>
-          <div className="rounded-xl border border-amber-200/80 bg-amber-50/30 p-4 dark:border-amber-900/30 dark:bg-amber-950/10 shadow-2xs">
-            <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Cần làm (To Do)</p>
-            <p className="mt-1 text-2xl font-bold text-amber-800 dark:text-amber-200">{counts.todo}</p>
+          <div className="stat-3d rounded-2xl p-4">
+            <p className="text-xs font-semibold text-zinc-500">Cần làm</p>
+            <p className="mt-1 text-2xl font-black text-black dark:text-white tracking-tight">{counts.todo}</p>
           </div>
-          <div className="rounded-xl border border-blue-200/80 bg-blue-50/30 p-4 dark:border-blue-900/30 dark:bg-blue-950/10 shadow-2xs">
-            <p className="text-xs font-medium text-blue-700 dark:text-blue-300">Đang làm (In Progress)</p>
-            <p className="mt-1 text-2xl font-bold text-blue-800 dark:text-blue-200">{counts.inProgress}</p>
+          <div className="stat-3d rounded-2xl p-4">
+            <p className="text-xs font-semibold text-zinc-500">Đang làm</p>
+            <p className="mt-1 text-2xl font-black text-black dark:text-white tracking-tight">{counts.inProgress}</p>
           </div>
-          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/30 p-4 dark:border-emerald-900/30 dark:bg-emerald-950/10 shadow-2xs">
-            <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Hoàn thành (Done)</p>
-            <p className="mt-1 text-2xl font-bold text-emerald-800 dark:text-emerald-200">{counts.done}</p>
+          <div className="stat-3d rounded-2xl p-4">
+            <p className="text-xs font-semibold text-zinc-500">Hoàn thành</p>
+            <p className="mt-1 text-2xl font-black text-black dark:text-white tracking-tight">{counts.done}</p>
           </div>
         </div>
       </section>
@@ -279,40 +267,29 @@ export default function HomePage() {
 
           {/* Database Connection Alert (if any) */}
           {error && (
-            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300 flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
-              <div>
-                <p className="font-semibold">Chưa kết nối được Database Supabase:</p>
-                <p className="text-xs mt-1 text-amber-700 dark:text-amber-400">
-                  {error}
-                </p>
-                <p className="text-xs mt-1">
-                  Hãy đảm bảo bạn đã cung cấp <strong>DATABASE_URL</strong> trong file <code>.env</code> và chạy <code>npx prisma migrate dev</code>.
-                </p>
-              </div>
+            <div className="p-3.5 rounded-xl bg-zinc-100 border border-zinc-300 text-zinc-900 text-xs dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-100">
+              <p className="font-bold">Chưa kết nối được cơ sở dữ liệu:</p>
+              <p className="mt-1 text-zinc-600 dark:text-zinc-400">{error}</p>
             </div>
           )}
 
           {/* Task List Content */}
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 rounded-2xl border border-dashed border-slate-300 bg-white/50 dark:border-slate-800 dark:bg-slate-900/50">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-3" />
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                Đang tải danh sách công việc từ Supabase...
+            <div className="flex flex-col items-center justify-center py-20 rounded-2xl border border-dashed border-zinc-300 bg-white/50 dark:border-zinc-800 dark:bg-zinc-950/50 backdrop-blur-sm">
+              <Loader2 className="h-6 w-6 animate-spin text-black dark:text-white mb-2" />
+              <p className="text-xs font-semibold text-zinc-500">
+                Đang tải danh sách công việc...
               </p>
             </div>
           ) : filteredTasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 px-4 text-center rounded-2xl border border-dashed border-slate-300 bg-white/50 dark:border-slate-800 dark:bg-slate-900/50">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 mb-3">
-                <Inbox className="h-6 w-6" />
-              </div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center rounded-2xl border border-dashed border-zinc-300 bg-white/40 dark:border-zinc-800 dark:bg-zinc-950/40 backdrop-blur-sm">
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                 Chưa có công việc nào
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
+              <p className="text-xs text-zinc-500 mt-1 max-w-xs">
                 {searchQuery || selectedStatus !== "ALL"
-                  ? "Không tìm thấy công việc phù hợp với bộ lọc hiện tại."
-                  : "Hãy sử dụng form bên cạnh để tạo công việc đầu tiên của bạn!"}
+                  ? "Không có công việc phù hợp với bộ lọc."
+                  : "Bắt đầu bằng việc thêm công việc mới bên cạnh."}
               </p>
             </div>
           ) : (

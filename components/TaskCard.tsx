@@ -2,15 +2,6 @@
 
 import { useState } from "react";
 import { TaskItem } from "@/lib/types";
-import { 
-  Calendar, 
-  Trash2, 
-  Edit3, 
-  Clock, 
-  CheckCircle2, 
-  CircleDashed,
-  Loader2 
-} from "lucide-react";
 
 interface TaskCardProps {
   task: TaskItem;
@@ -24,7 +15,7 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange }: Tas
   const [isChangingStatus, setIsChangingStatus] = useState(false);
 
   const handleDelete = async () => {
-    if (confirm(`Bạn có chắc chắn muốn xóa công việc "${task.title}" không?`)) {
+    if (confirm(`Xác nhận xóa công việc "${task.title}"?`)) {
       setIsDeleting(true);
       try {
         await onDelete(task.id);
@@ -49,22 +40,19 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange }: Tas
     switch (status) {
       case "DONE":
         return {
-          label: "Done",
-          bg: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800",
-          icon: CheckCircle2,
+          label: "Hoàn thành",
+          classes: "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white font-bold",
         };
       case "IN_PROGRESS":
         return {
-          label: "In Progress",
-          bg: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800",
-          icon: CircleDashed,
+          label: "Đang làm",
+          classes: "bg-zinc-200 text-zinc-900 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700",
         };
       case "TODO":
       default:
         return {
-          label: "To Do",
-          bg: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
-          icon: Clock,
+          label: "Cần làm",
+          classes: "bg-zinc-50 text-zinc-700 border-zinc-300 dark:bg-zinc-900/60 dark:text-zinc-300 dark:border-zinc-700",
         };
     }
   };
@@ -73,32 +61,31 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange }: Tas
     switch (priority) {
       case "HIGH":
         return {
-          label: "High Priority",
-          classes: "text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-300 dark:bg-rose-950/60 dark:border-rose-900",
+          label: "Cao",
+          classes: "bg-black text-white dark:bg-white dark:text-black font-bold border border-black dark:border-white",
         };
       case "LOW":
         return {
-          label: "Low Priority",
-          classes: "text-slate-600 bg-slate-100 border-slate-200 dark:text-slate-400 dark:bg-slate-800 dark:border-slate-700",
+          label: "Thấp",
+          classes: "text-zinc-500 bg-zinc-50 border-zinc-200 dark:text-zinc-400 dark:bg-zinc-900 dark:border-zinc-800",
         };
       case "MEDIUM":
       default:
         return {
-          label: "Medium Priority",
-          classes: "text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-950/60 dark:border-amber-800",
+          label: "Trung bình",
+          classes: "text-zinc-800 bg-zinc-100 border-zinc-300 dark:text-zinc-200 dark:bg-zinc-800 dark:border-zinc-700",
         };
     }
   };
 
   const statusInfo = getStatusBadge(task.status);
-  const StatusIcon = statusInfo.icon;
   const priorityInfo = getPriorityBadge(task.priority);
 
   const formattedDueDate = task.dueDate
     ? new Date(task.dueDate).toLocaleDateString("vi-VN", {
         year: "numeric",
-        month: "short",
-        day: "numeric",
+        month: "2-digit",
+        day: "2-digit",
       })
     : null;
 
@@ -106,83 +93,69 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange }: Tas
 
   return (
     <div
-      className={`group relative flex flex-col justify-between rounded-xl border p-5 transition-all duration-200 hover:shadow-md ${
+      className={`card-3d group relative flex flex-col justify-between rounded-2xl p-5 ${
         isDone
-          ? "border-emerald-200/80 bg-emerald-50/20 dark:border-emerald-900/40 dark:bg-emerald-950/10"
-          : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+          ? "border-zinc-300 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-950/50 opacity-90"
+          : ""
       }`}
     >
       <div>
-        {/* Top Badges */}
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        {/* Top Badges & Quick Status Switch */}
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5">
           <div className="flex items-center gap-2">
-            {/* Status Dropdown/Badge */}
-            <div className="relative inline-flex items-center">
-              <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${statusInfo.bg}`}
-              >
-                {isChangingStatus ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <StatusIcon className="h-3.5 w-3.5" />
-                )}
-                <span>{statusInfo.label}</span>
-              </span>
-            </div>
+            {/* Status Pill (Monochrome) */}
+            <span className={`pill-3d inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] border ${statusInfo.classes}`}>
+              {isChangingStatus ? "..." : statusInfo.label}
+            </span>
 
-            {/* Priority Badge */}
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${priorityInfo.classes}`}
-            >
+            {/* Priority Pill (Monochrome) */}
+            <span className={`pill-3d inline-flex items-center px-2 py-0.5 rounded-md text-[11px] border ${priorityInfo.classes}`}>
               {priorityInfo.label}
             </span>
           </div>
 
-          {/* Quick Status toggle buttons */}
-          <div className="flex items-center gap-1">
+          {/* Quick Status Pill Toggle (Monochrome B&W) */}
+          <div className="flex items-center p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-[10px] font-semibold">
             <button
-              title="Đánh dấu To Do"
               onClick={() => handleQuickStatus("TODO")}
               disabled={isChangingStatus || task.status === "TODO"}
-              className={`p-1 rounded text-xs transition-opacity ${
+              className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                 task.status === "TODO"
-                  ? "opacity-30 cursor-default"
-                  : "text-slate-400 hover:text-amber-600 hover:bg-amber-50 cursor-pointer"
+                  ? "bg-black text-white dark:bg-white dark:text-black font-bold shadow-2xs"
+                  : "text-zinc-500 hover:text-black dark:hover:text-white"
               }`}
             >
-              <Clock className="h-3.5 w-3.5" />
+              Chờ
             </button>
             <button
-              title="Đánh dấu In Progress"
               onClick={() => handleQuickStatus("IN_PROGRESS")}
               disabled={isChangingStatus || task.status === "IN_PROGRESS"}
-              className={`p-1 rounded text-xs transition-opacity ${
+              className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                 task.status === "IN_PROGRESS"
-                  ? "opacity-30 cursor-default"
-                  : "text-slate-400 hover:text-blue-600 hover:bg-blue-50 cursor-pointer"
+                  ? "bg-black text-white dark:bg-white dark:text-black font-bold shadow-2xs"
+                  : "text-zinc-500 hover:text-black dark:hover:text-white"
               }`}
             >
-              <CircleDashed className="h-3.5 w-3.5" />
+              Làm
             </button>
             <button
-              title="Đánh dấu Done"
               onClick={() => handleQuickStatus("DONE")}
               disabled={isChangingStatus || task.status === "DONE"}
-              className={`p-1 rounded text-xs transition-opacity ${
+              className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                 task.status === "DONE"
-                  ? "opacity-30 cursor-default"
-                  : "text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 cursor-pointer"
+                  ? "bg-black text-white dark:bg-white dark:text-black font-bold shadow-2xs"
+                  : "text-zinc-500 hover:text-black dark:hover:text-white"
               }`}
             >
-              <CheckCircle2 className="h-3.5 w-3.5" />
+              Xong
             </button>
           </div>
         </div>
 
         {/* Task Title */}
         <h3
-          className={`text-base font-bold text-slate-900 dark:text-white leading-snug break-words ${
-            isDone ? "line-through text-slate-500 dark:text-slate-400" : ""
+          className={`text-base font-bold tracking-tight text-black dark:text-white leading-snug break-words ${
+            isDone ? "line-through text-zinc-400 dark:text-zinc-500" : ""
           }`}
         >
           {task.title}
@@ -191,10 +164,10 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange }: Tas
         {/* Task Description */}
         {task.description && (
           <p
-            className={`mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words ${
+            className={`mt-2 text-xs leading-relaxed whitespace-pre-wrap break-words line-clamp-3 ${
               isDone
-                ? "text-slate-400 dark:text-slate-500"
-                : "text-slate-600 dark:text-slate-300"
+                ? "text-zinc-400 dark:text-zinc-500"
+                : "text-zinc-600 dark:text-zinc-300"
             }`}
           >
             {task.description}
@@ -203,41 +176,30 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange }: Tas
       </div>
 
       {/* Card Footer: Due Date & Actions */}
-      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 text-xs">
+      <div className="mt-4 pt-3.5 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between gap-2 text-xs">
         {/* Due Date */}
-        <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-medium">
+        <div className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
           {formattedDueDate ? (
-            <>
-              <Calendar className="h-3.5 w-3.5 text-slate-400" />
-              <span>Hạn: {formattedDueDate}</span>
-            </>
+            <span>Hạn: <strong className="text-black dark:text-zinc-200">{formattedDueDate}</strong></span>
           ) : (
-            <span className="text-slate-400 dark:text-slate-500 italic">Không có thời hạn</span>
+            <span className="text-zinc-400 dark:text-zinc-600">Không có hạn</span>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => onEdit(task)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 dark:text-slate-400 dark:hover:text-blue-400 dark:hover:bg-blue-950/50 transition-colors font-medium cursor-pointer"
-            title="Sửa công việc"
+            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-zinc-800 dark:text-zinc-200 bg-zinc-100 hover:bg-black hover:text-white dark:bg-zinc-800 dark:hover:bg-white dark:hover:text-black transition-all cursor-pointer"
           >
-            <Edit3 className="h-3.5 w-3.5" />
-            <span>Sửa</span>
+            Sửa
           </button>
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:text-rose-400 dark:hover:bg-rose-950/50 transition-colors font-medium cursor-pointer disabled:opacity-50"
-            title="Xóa công việc"
+            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-zinc-500 hover:text-rose-600 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all cursor-pointer disabled:opacity-50"
           >
-            {isDeleting ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Trash2 className="h-3.5 w-3.5" />
-            )}
-            <span>Xóa</span>
+            {isDeleting ? "..." : "Xóa"}
           </button>
         </div>
       </div>

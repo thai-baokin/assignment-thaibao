@@ -1,39 +1,34 @@
-import { CheckSquare, Database, Globe } from "lucide-react";
-
 export default function Footer() {
   return (
-    <footer className="mt-auto border-t border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/50 py-8">
+    <footer className="mt-auto border-t border-zinc-200/90 bg-white/70 dark:border-zinc-800/90 dark:bg-black/70 backdrop-blur-md py-6">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           {/* Brand Info */}
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white shadow-xs">
-              <CheckSquare className="h-4 w-4" />
-            </div>
-            <span className="font-bold text-slate-800 dark:text-slate-200">
-              Task & Team Management App
+            <span className="font-extrabold text-sm text-black dark:text-white">
+              TaskPulse
             </span>
-            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-              • Assignment 1
+            <span className="text-xs text-zinc-500 font-normal">
+              — Hệ thống quản lý công việc và nhóm
             </span>
           </div>
 
           {/* Tech Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-              <Globe className="h-3 w-3 text-blue-500" /> Next.js App Router
+          <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400 font-medium">
+            <span className="px-2.5 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">
+              Next.js
             </span>
-            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-              <Database className="h-3 w-3 text-emerald-500" /> Prisma & Supabase
+            <span className="px-2.5 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">
+              Prisma & Supabase
             </span>
-            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-              ▲ Vercel Ready
+            <span className="px-2.5 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">
+              Tailwind CSS
             </span>
           </div>
 
           {/* Copyright */}
-          <p className="text-xs text-slate-400 dark:text-slate-500">
-            &copy; {new Date().getFullYear()} Software Development Network. Built with Next.js & Prisma.
+          <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
+            &copy; {new Date().getFullYear()} TaskPulse
           </p>
         </div>
       </div>

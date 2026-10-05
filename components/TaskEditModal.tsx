@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { TaskItem, UpdateTaskInput } from "@/lib/types";
-import { X, Check, Loader2, AlertCircle, Edit3 } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 
 interface TaskEditModalProps {
   task: TaskItem | null;
@@ -60,38 +60,32 @@ function TaskEditModalContent({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="card-3d relative w-full max-w-lg rounded-2xl p-6 shadow-2xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
-              <Edit3 className="h-4 w-4" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              Chỉnh sửa công việc
-            </h3>
-          </div>
+        <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-zinc-200 dark:border-zinc-800">
+          <h3 className="text-base font-bold text-black dark:text-white tracking-tight">
+            Chỉnh sửa công việc
+          </h3>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 dark:hover:text-white dark:hover:bg-zinc-900 transition-colors cursor-pointer"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm dark:bg-rose-950/50 dark:border-rose-900 dark:text-rose-300">
-              <AlertCircle className="h-4 w-4 shrink-0" />
+            <div className="p-3 rounded-xl bg-zinc-100 border border-zinc-300 text-zinc-900 text-xs dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
               <span>{error}</span>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              Tiêu đề <span className="text-rose-500">*</span>
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              Tiêu đề <span className="text-black dark:text-white">*</span>
             </label>
             <input
               type="text"
@@ -100,91 +94,82 @@ function TaskEditModalContent({
                 setTitle(e.target.value);
                 if (error) setError(null);
               }}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white transition-colors"
+              className="w-full px-3.5 py-2 rounded-xl border border-zinc-300 bg-white text-black text-xs focus:outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              Mô tả chi tiết
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              Mô tả
             </label>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white transition-colors resize-none"
+              className="w-full px-3.5 py-2 rounded-xl border border-zinc-300 bg-white text-black text-xs focus:outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white resize-none"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 Trạng thái
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white transition-colors"
+                className="w-full px-2.5 py-2 rounded-xl border border-zinc-300 bg-white text-black text-xs focus:outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
               >
-                <option value="TODO">To Do</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="DONE">Done</option>
+                <option value="TODO">Cần làm</option>
+                <option value="IN_PROGRESS">Đang làm</option>
+                <option value="DONE">Hoàn thành</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Độ ưu tiên
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                Ưu tiên
               </label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white transition-colors"
+                className="w-full px-2.5 py-2 rounded-xl border border-zinc-300 bg-white text-black text-xs focus:outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
               >
-                <option value="LOW">Thấp (Low)</option>
-                <option value="MEDIUM">Trung bình (Medium)</option>
-                <option value="HIGH">Cao (High)</option>
+                <option value="LOW">Thấp</option>
+                <option value="MEDIUM">Trung bình</option>
+                <option value="HIGH">Cao</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 Hạn chót
               </label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white transition-colors"
+                className="w-full px-2.5 py-1.5 rounded-xl border border-zinc-300 bg-white text-black text-xs focus:outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
               />
             </div>
           </div>
 
           {/* Action buttons */}
-          <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="pt-3 flex items-center justify-end gap-2 border-t border-zinc-200 dark:border-zinc-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="btn-3d-secondary px-4 py-2 text-xs cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-xl font-semibold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50"
+              className="btn-3d-primary px-5 py-2 text-xs cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
             >
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Đang lưu...</span>
-                </>
-              ) : (
-                <>
-                  <Check className="h-4 w-4" />
-                  <span>Cập nhật</span>
-                </>
-              )}
+              {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              <span>{isSaving ? "Đang lưu..." : "Lưu thay đổi"}</span>
             </button>
           </div>
         </form>

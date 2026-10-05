@@ -3,20 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
-import {
-  Users,
-  Plus,
-  Crown,
-  ShieldCheck,
-  CheckSquare,
-  ArrowRight,
-  FolderKanban,
-  Sparkles,
-  Loader2,
-  X,
-  AlertCircle,
-  Building2,
-} from "lucide-react";
+import { Loader2, X } from "lucide-react";
 
 interface TeamItem {
   id: string;
@@ -114,119 +101,102 @@ export default function TeamsPage() {
 
   return (
     <div className="flex-1 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
+      {/* Header section (Monochrome B&W) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-zinc-200 dark:border-zinc-800">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Quản lý Nhóm & Không gian làm việc
-            </h1>
-            <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/60 dark:border-indigo-800 dark:text-indigo-300">
-              Ass 2 Feature
-            </span>
+          <div className="pill-3d inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-900 border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-100 mb-2">
+            <span>Không gian cộng tác</span>
           </div>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Xem danh sách các nhóm bạn tham gia, tạo nhóm mới và chỉ định công việc cho thành viên.
+          <h1 className="text-2xl sm:text-3xl font-black text-black dark:text-white tracking-tight">
+            Nhóm làm việc
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-zinc-500">
+            Quản lý các nhóm bạn tham gia, tạo không gian mới và phân chia công việc.
           </p>
         </div>
 
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20 transition-all cursor-pointer active:scale-95 shrink-0"
+          className="btn-3d-primary px-4 py-2.5 text-xs tracking-tight cursor-pointer inline-flex items-center justify-center shrink-0"
         >
-          <Plus className="h-4 w-4" />
-          <span>Tạo Nhóm Mới</span>
+          <span>Tạo nhóm mới</span>
         </button>
       </div>
 
       {/* Error alert */}
       {error && (
-        <div className="mt-6 flex items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
-          <AlertCircle className="h-5 w-5 shrink-0" />
+        <div className="mt-6 rounded-xl border border-zinc-300 bg-zinc-100 p-4 text-xs font-medium text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
           <span>{error}</span>
         </div>
       )}
 
       {/* Loading state */}
       {loading ? (
-        <div className="py-24 flex flex-col items-center justify-center text-slate-400">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-3" />
-          <p className="text-sm font-medium">Đang tải danh sách nhóm của bạn...</p>
+        <div className="py-24 flex flex-col items-center justify-center text-zinc-400">
+          <Loader2 className="h-6 w-6 animate-spin text-black dark:text-white mb-2" />
+          <p className="text-xs font-medium">Đang tải danh sách nhóm...</p>
         </div>
       ) : teams.length === 0 ? (
         /* Empty State */
-        <div className="mt-10 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 p-12 text-center bg-white/50 dark:bg-slate-900/50">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400 mb-4">
-            <Users className="h-8 w-8" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">Bạn chưa tham gia nhóm nào</h3>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            Hãy bắt đầu bằng cách tạo một nhóm làm việc đầu tiên hoặc nhờ Trưởng nhóm mời bạn tham gia bằng email.
+        <div className="mt-10 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 p-12 text-center bg-white/40 dark:bg-zinc-950/40 backdrop-blur-sm">
+          <h3 className="text-base font-bold text-black dark:text-white">Chưa có nhóm nào</h3>
+          <p className="mt-1 text-xs text-zinc-500 max-w-sm mx-auto">
+            Tạo nhóm đầu tiên để bắt đầu quản lý dự án cùng đồng đội.
           </p>
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all cursor-pointer"
+            className="btn-3d-primary mt-5 px-4 py-2 text-xs cursor-pointer inline-flex items-center justify-center"
           >
-            <Plus className="h-4 w-4" />
-            <span>Tạo Nhóm Đầu Tiên</span>
+            <span>Tạo nhóm ngay</span>
           </button>
         </div>
       ) : (
-        /* Teams Grid */
+        /* Teams Grid (Monochrome 3D Card Surfaces) */
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {teams.map((team) => {
             const isOwner = user?.id === team.ownerId;
             return (
               <div
                 key={team.id}
-                className="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-xs hover:shadow-md hover:border-blue-400/50 dark:border-slate-800 dark:bg-slate-900 transition-all flex flex-col justify-between"
+                className="card-3d group relative rounded-2xl p-6 flex flex-col justify-between"
               >
                 <div>
                   {/* Card Header & Role Badge */}
                   <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-500/10 to-indigo-500/10 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-900/40">
-                      <FolderKanban className="h-6 w-6" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-white dark:bg-white dark:text-black font-extrabold text-sm shadow-2xs">
+                      {team.name.charAt(0).toUpperCase()}
                     </div>
                     {isOwner ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-300">
-                        <Crown className="h-3.5 w-3.5 text-amber-500" />
-                        <span>Owner</span>
+                      <span className="pill-3d px-2.5 py-0.5 rounded-full text-[11px] bg-black text-white dark:bg-white dark:text-black font-bold border border-black dark:border-white">
+                        Trưởng nhóm
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-300">
-                        <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                        <span>Member</span>
+                      <span className="pill-3d px-2.5 py-0.5 rounded-full text-[11px] bg-zinc-100 text-zinc-800 border border-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700">
+                        Thành viên
                       </span>
                     )}
                   </div>
 
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  <h3 className="text-base font-bold text-black dark:text-white group-hover:underline transition-all tracking-tight">
                     {team.name}
                   </h3>
 
-                  <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 min-h-[2rem]">
-                    {team.description || "Chưa có mô tả cho nhóm này."}
+                  <p className="mt-1 text-xs text-zinc-500 line-clamp-2 min-h-[2rem]">
+                    {team.description || "Chưa có mô tả cho nhóm."}
                   </p>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80">
-                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-4">
-                    <div className="flex items-center gap-1.5">
-                      <Users className="h-4 w-4 text-slate-400" />
-                      <span>{team._count.members} thành viên</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <CheckSquare className="h-4 w-4 text-slate-400" />
-                      <span>{team._count.tasks} công việc</span>
-                    </div>
+                <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800/80">
+                  <div className="flex items-center justify-between text-[11px] font-medium text-zinc-500 mb-4">
+                    <span>{team._count.members} thành viên</span>
+                    <span>{team._count.tasks} công việc</span>
                   </div>
 
                   <Link
                     href={`/teams/${team.id}`}
-                    className="flex items-center justify-between w-full px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 dark:bg-slate-800/50 dark:hover:bg-slate-800 dark:text-slate-200 dark:hover:text-blue-400 text-xs font-semibold transition-all group-hover:border-blue-200"
+                    className="btn-3d-secondary flex items-center justify-center w-full py-2 text-xs font-semibold cursor-pointer"
                   >
-                    <span>Vào Không Gian Nhóm</span>
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    <span>Vào nhóm</span>
                   </Link>
                 </div>
               </div>
@@ -235,57 +205,53 @@ export default function TeamsPage() {
         </div>
       )}
 
-      {/* Modal Tạo Nhóm Mới */}
+      {/* Modal Tạo Nhóm Mới (Monochrome 3D Surface) */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
-                  <Building2 className="h-4 w-4" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">Tạo Nhóm Mới</h3>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="card-3d relative w-full max-w-md rounded-2xl p-6 shadow-2xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+            <div className="flex items-center justify-between pb-3.5 border-b border-zinc-200 dark:border-zinc-800">
+              <h3 className="text-base font-bold text-black dark:text-white tracking-tight">
+                Tạo nhóm mới
+              </h3>
               <button
                 onClick={() => setIsCreateOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 cursor-pointer"
+                className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-black dark:hover:bg-zinc-900 dark:hover:text-white cursor-pointer transition-colors"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             {createError && (
-              <div className="mt-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
-                <AlertCircle className="h-4 w-4 shrink-0" />
+              <div className="mt-4 rounded-xl border border-zinc-300 bg-zinc-100 p-3 text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
                 <span>{createError}</span>
               </div>
             )}
 
             <form onSubmit={handleCreateTeam} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Tên nhóm <span className="text-rose-500">*</span>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  Tên nhóm <span className="text-black dark:text-white">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
-                  placeholder="Ví dụ: Đội Phát Triển Frontend, Marketing Team..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-3.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-blue-600 focus:ring-3 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-500"
+                  placeholder="Ví dụ: Đội Frontend, Nhóm Dự án 1..."
+                  className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-3 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:placeholder:text-zinc-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Mô tả nhóm (Tùy chọn)
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  Mô tả nhóm
                 </label>
                 <textarea
                   rows={3}
                   value={newTeamDesc}
                   onChange={(e) => setNewTeamDesc(e.target.value)}
-                  placeholder="Mô tả mục tiêu, dự án hoặc thành viên phụ trách của nhóm..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-blue-600 focus:ring-3 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-500 resize-none"
+                  placeholder="Mô tả mục tiêu của nhóm..."
+                  className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-3 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:placeholder:text-zinc-500 resize-none"
                 />
               </div>
 
@@ -293,14 +259,14 @@ export default function TeamsPage() {
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="btn-3d-secondary px-4 py-2 text-xs cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={submitting || !newTeamName.trim()}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                  className="btn-3d-primary px-4 py-2 text-xs disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
                 >
                   {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   <span>{submitting ? "Đang tạo..." : "Xác nhận tạo"}</span>

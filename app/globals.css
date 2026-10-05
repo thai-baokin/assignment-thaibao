@@ -1,8 +1,21 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #09090b;
+  --card-bg: rgba(255, 255, 255, 0.96);
+  --card-border: #e4e4e7;
+  --glass-reflect: rgba(255, 255, 255, 0.9);
+}
+
+.dark, html.dark {
+  --background: #000000;
+  --foreground: #fafafa;
+  --card-bg: rgba(13, 13, 15, 0.95);
+  --card-border: #27272a;
+  --glass-reflect: rgba(255, 255, 255, 0.08);
 }
 
 @theme inline {
@@ -11,84 +24,287 @@
   --font-sans: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #030712;
-    --foreground: #f8fafc;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(0, 0, 0, 0.03) 0px, transparent 45%),
+    radial-gradient(at 100% 100%, rgba(0, 0, 0, 0.02) 0px, transparent 45%),
+    radial-gradient(circle at 50% 15%, rgba(0, 0, 0, 0.025) 0px, transparent 55%);
+  background-attachment: fixed;
+  min-height: 100vh;
 }
 
-/* Bulletproof input styles: Always guarantee high contrast and dark background in dark mode */
+.dark body, body.dark, html.dark body {
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(255, 255, 255, 0.06) 0px, transparent 40%),
+    radial-gradient(at 100% 100%, rgba(255, 255, 255, 0.04) 0px, transparent 40%),
+    radial-gradient(circle at 50% 15%, rgba(255, 255, 255, 0.05) 0px, transparent 50%);
+}
+
+/* ============================================================== */
+/* MONOCHROME 3D DEPTH & LIGHTING SYSTEM (Black & White Aesthetic) */
+/* ============================================================== */
+
+/* 3D Card Surface */
+.card-3d {
+  position: relative;
+  background: var(--card-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--card-border);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 10px 24px -6px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 0 var(--glass-reflect);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+              border-color 0.2s ease;
+}
+
+.card-3d:hover {
+  transform: translateY(-3px);
+  border-color: #a1a1aa;
+  box-shadow:
+    0 20px 32px -8px rgba(0, 0, 0, 0.12),
+    0 6px 14px -3px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 0 rgba(255, 255, 255, 1);
+}
+
+.dark .card-3d, html.dark .card-3d {
+  box-shadow:
+    0 4px 20px -2px rgba(0, 0, 0, 0.8),
+    0 1px 2px rgba(0, 0, 0, 0.9),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+.dark .card-3d:hover, html.dark .card-3d:hover {
+  border-color: #52525b;
+  box-shadow:
+    0 20px 40px -10px rgba(0, 0, 0, 0.95),
+    0 0 20px -2px rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.14);
+}
+
+/* 3D Stat Card */
+.stat-3d {
+  position: relative;
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.03),
+    0 8px 18px -4px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 0 var(--glass-reflect);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.stat-3d:hover {
+  transform: translateY(-2px);
+  border-color: #a1a1aa;
+  box-shadow:
+    0 12px 24px -6px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+}
+
+.dark .stat-3d, html.dark .stat-3d {
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+.dark .stat-3d:hover, html.dark .stat-3d:hover {
+  border-color: #52525b;
+  box-shadow:
+    0 12px 28px -6px rgba(0, 0, 0, 0.9),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+/* 3D Tactile Primary Button */
+.btn-3d-primary {
+  position: relative;
+  background: #09090b;
+  color: #ffffff;
+  border: 1px solid #000000;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  box-shadow:
+    0 3px 0 0 #27272a,
+    0 8px 18px -4px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
+  transition: transform 0.14s ease, box-shadow 0.14s ease, background-color 0.14s ease;
+}
+
+.btn-3d-primary:hover {
+  background: #18181b;
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 0 0 #27272a,
+    0 12px 22px -4px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+}
+
+.btn-3d-primary:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 0 #27272a,
+    0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.dark .btn-3d-primary, html.dark .btn-3d-primary {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #ffffff;
+  box-shadow:
+    0 3px 0 0 #d4d4d8,
+    0 8px 20px -4px rgba(255, 255, 255, 0.2),
+    inset 0 1px 0 0 #ffffff;
+}
+
+.dark .btn-3d-primary:hover, html.dark .btn-3d-primary:hover {
+  background: #f4f4f5;
+  box-shadow:
+    0 4px 0 0 #d4d4d8,
+    0 12px 26px -4px rgba(255, 255, 255, 0.3),
+    inset 0 1px 0 0 #ffffff;
+}
+
+.dark .btn-3d-primary:active, html.dark .btn-3d-primary:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 0 #a1a1aa,
+    0 2px 6px rgba(255, 255, 255, 0.15);
+}
+
+/* 3D Tactile Secondary Button */
+.btn-3d-secondary {
+  position: relative;
+  background: #ffffff;
+  color: #18181b;
+  border: 1px solid #d4d4d8;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  box-shadow:
+    0 2px 0 0 #e4e4e7,
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 0 #ffffff;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+}
+
+.btn-3d-secondary:hover {
+  transform: translateY(-1px);
+  background: #fafafa;
+  color: #000000;
+  border-color: #a1a1aa;
+  box-shadow:
+    0 3px 0 0 #d4d4d8,
+    0 6px 14px rgba(0, 0, 0, 0.07),
+    inset 0 1px 0 0 #ffffff;
+}
+
+.btn-3d-secondary:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 1px 0 0 #e4e4e7,
+    0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dark .btn-3d-secondary, html.dark .btn-3d-secondary {
+  background: #121214;
+  color: #f4f4f5;
+  border-color: #27272a;
+  box-shadow:
+    0 2px 0 0 #1c1c1f,
+    0 4px 12px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+.dark .btn-3d-secondary:hover, html.dark .btn-3d-secondary:hover {
+  background: #18181b;
+  color: #ffffff;
+  border-color: #3f3f46;
+  box-shadow:
+    0 3px 0 0 #27272a,
+    0 6px 16px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+.dark .btn-3d-secondary:active, html.dark .btn-3d-secondary:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 1px 0 0 #18181b,
+    inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* 3D Pill Badge */
+.pill-3d {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.dark .pill-3d, html.dark .pill-3d {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Monochrome Input Fields */
 input, select, textarea {
-  color: #0f172a;
-  background-color: #f8fafc;
+  color: #09090b;
+  background-color: #fafafa;
+  border-radius: 0.75rem;
+  border: 1px solid #d4d4d8;
+  transition: all 0.15s ease;
 }
 
 input:focus, select:focus, textarea:focus {
-  color: #0f172a;
+  color: #000000;
   background-color: #ffffff;
+  border-color: #09090b;
+  box-shadow: 0 0 0 3px rgba(9, 9, 11, 0.12);
 }
 
-@media (prefers-color-scheme: dark) {
-  input, select, textarea {
-    color: #f8fafc !important;
-    background-color: #090d16 !important;
-    border-color: #334155 !important;
-  }
-  
-  input:focus, select:focus, textarea:focus {
-    color: #ffffff !important;
-    background-color: #090d16 !important;
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
-  }
-
-  input::placeholder, textarea::placeholder {
-    color: #64748b !important;
-  }
+.dark input, .dark select, .dark textarea,
+html.dark input, html.dark select, html.dark textarea {
+  color: #fafafa !important;
+  background-color: #09090b !important;
+  border-color: #27272a !important;
 }
 
-.dark input, .dark select, .dark textarea {
-  color: #f8fafc !important;
-  background-color: #090d16 !important;
-  border-color: #334155 !important;
-}
-
-.dark input:focus, .dark select:focus, .dark textarea:focus {
+.dark input:focus, .dark select:focus, .dark textarea:focus,
+html.dark input:focus, html.dark select:focus, html.dark textarea:focus {
   color: #ffffff !important;
-  background-color: #090d16 !important;
-  border-color: #6366f1 !important;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+  background-color: #0d0d0f !important;
+  border-color: #fafafa !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18) !important;
 }
 
-.dark input::placeholder, .dark textarea::placeholder {
-  color: #64748b !important;
+.dark input::placeholder, .dark textarea::placeholder,
+html.dark input::placeholder, html.dark textarea::placeholder {
+  color: #71717a !important;
 }
 
-/* Fix browser autofill styling so text is always high contrast */
+/* Fix browser autofill styling */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
 input:-webkit-autofill:focus, 
 input:-webkit-autofill:active {
-  -webkit-text-fill-color: #0f172a !important;
+  -webkit-text-fill-color: #09090b !important;
   -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
   box-shadow: 0 0 0 1000px #ffffff inset !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
-@media (prefers-color-scheme: dark) {
-  input:-webkit-autofill,
-  input:-webkit-autofill:hover, 
-  input:-webkit-autofill:focus, 
-  input:-webkit-autofill:active {
-    -webkit-text-fill-color: #ffffff !important;
-    -webkit-box-shadow: 0 0 0 1000px #090d16 inset !important;
-    box-shadow: 0 0 0 1000px #090d16 inset !important;
-    transition: background-color 5000s ease-in-out 0s;
-  }
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover, 
+.dark input:-webkit-autofill:focus, 
+.dark input:-webkit-autofill:active,
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover, 
+html.dark input:-webkit-autofill:focus, 
+html.dark input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px #09090b inset !important;
+  box-shadow: 0 0 0 1000px #09090b inset !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
