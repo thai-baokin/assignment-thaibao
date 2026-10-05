@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,11 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const tasks = await prisma.task.findMany({
+      include: {
+        assignee: { select: { id: true, name: true, email: true } },
+        creator: { select: { id: true, name: true, email: true } },
+        team: { select: { id: true, name: true } },
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -26,8 +32,9 @@ export async function GET() {
 // POST /api/tasks - Tạo task mới
 export async function POST(request: Request) {
   try {
+    const session = await getCurrentUser();
     const body = await request.json();
-    const { title, description, status, priority, dueDate } = body;
+    const { title, description, status, priority, dueDate, teamId, assigneeId } = body;
 
     if (!title || typeof title !== "string" || title.trim() === "") {
       return NextResponse.json(
@@ -43,6 +50,14 @@ export async function POST(request: Request) {
         status: status || "TODO",
         priority: priority || "MEDIUM",
         dueDate: dueDate ? new Date(dueDate) : null,
+        teamId: teamId || null,
+        creatorId: session?.userId || null,
+        assigneeId: assigneeId || null,
+      },
+      include: {
+        assignee: { select: { id: true, name: true, email: true } },
+        creator: { select: { id: true, name: true, email: true } },
+        team: { select: { id: true, name: true } },
       },
     });
 
