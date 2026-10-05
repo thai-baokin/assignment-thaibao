@@ -11,15 +11,12 @@ export async function GET() {
 
     // Logic chuẩn:
     // 1. Chỉ lấy task cá nhân (teamId: null), không lấy lẫn task của các Nhóm/Team
-    // 2. Nếu đã đăng nhập: chỉ lấy task của chính tài khoản này (hoặc task demo chung creatorId: null)
-    // 3. Nếu chưa đăng nhập: chỉ hiển thị task demo chung
+    // 2. Đã đăng nhập: CHỈ hiển thị task do chính tài khoản này tạo (tài khoản mới toanh sẽ có 0 task - trống hoàn toàn)
+    // 3. Chưa đăng nhập: hiển thị task mẫu/demo (creatorId: null)
     const whereCondition = session
       ? {
           teamId: null,
-          OR: [
-            { creatorId: session.userId },
-            { creatorId: null },
-          ],
+          creatorId: session.userId,
         }
       : {
           teamId: null,
