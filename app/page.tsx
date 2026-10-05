@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
 import TaskForm from "@/components/TaskForm";
 import TaskCard from "@/components/TaskCard";
 import TaskEditModal from "@/components/TaskEditModal";
@@ -205,20 +206,27 @@ export default function HomePage() {
       <section className="mb-10 text-center sm:text-left">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 dark:bg-blue-950/60 dark:border-blue-800 dark:text-blue-300 text-xs font-semibold mb-3">
-              <Sparkles className="h-3.5 w-3.5 text-blue-500" />
-              <span>Assignment 1: Project Setup & Prisma CRUD</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 dark:bg-indigo-950/60 dark:border-indigo-800 dark:text-indigo-300 text-xs font-semibold mb-3">
+              <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+              <span>Assignment 2: Authentication & Team Workspace</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Task & Team Management
             </h1>
             <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-              Ứng dụng quản lý công việc và nhóm làm việc. Giai đoạn 1 tập trung vào khởi tạo nền tảng, thiết kế cơ sở dữ liệu với Prisma & Supabase, và các tính năng CRUD Task công khai.
+              Hệ thống quản lý công việc và nhóm làm việc. Đăng nhập để tạo nhóm, mời thành viên theo email, phân công công việc và quản lý task trên bảng Kanban.
             </p>
           </div>
 
-          {/* Refresh Button */}
-          <div className="flex items-center justify-center sm:justify-end gap-2">
+          {/* Action Buttons */}
+          <div className="flex items-center justify-center sm:justify-end gap-2.5 flex-wrap">
+            <Link
+              href="/teams"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+            >
+              <span>Vào Không Gian Nhóm</span>
+              <span>→</span>
+            </Link>
             <button
               onClick={refreshTasks}
               disabled={isLoading}
