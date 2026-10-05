@@ -61,7 +61,16 @@ export async function PUT(request: Request, { params }: RouteParams) {
           );
         }
       }
+    } else if (existingTask.creatorId) {
+      // Task cá nhân: Chỉ người tạo mới được sửa
+      if (!session || session.userId !== existingTask.creatorId) {
+        return NextResponse.json(
+          { error: "Bạn không có quyền chỉnh sửa công việc cá nhân của người khác." },
+          { status: 403 }
+        );
+      }
     }
+
 
     const updatedTask = await prisma.task.update({
       where: { id },
@@ -130,7 +139,16 @@ export async function DELETE(request: Request, { params }: RouteParams) {
           { status: 403 }
         );
       }
+    } else if (existingTask.creatorId) {
+      // Task cá nhân: Chỉ người tạo mới được xóa
+      if (!session || session.userId !== existingTask.creatorId) {
+        return NextResponse.json(
+          { error: "Bạn không có quyền xóa công việc cá nhân của người khác." },
+          { status: 403 }
+        );
+      }
     }
+
 
     await prisma.task.delete({
       where: { id },

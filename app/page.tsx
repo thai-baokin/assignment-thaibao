@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { useAuth } from "@/components/AuthProvider";
 import TaskForm from "@/components/TaskForm";
 import TaskCard from "@/components/TaskCard";
 import TaskEditModal from "@/components/TaskEditModal";
@@ -10,6 +11,7 @@ import { TaskItem, CreateTaskInput, UpdateTaskInput } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 
 export default function HomePage() {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export default function HomePage() {
 
   useEffect(() => {
     let isCancelled = false;
+    setIsLoading(true);
 
     fetch("/api/tasks")
       .then(async (res) => {
@@ -80,7 +83,7 @@ export default function HomePage() {
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [user?.id]);
 
   // Handle Create Task (POST /api/tasks)
   const handleCreateTask = async (data: CreateTaskInput): Promise<boolean> => {

@@ -4,10 +4,30 @@ import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/tasks - Lấy toàn bộ danh sách tasks (sắp xếp mới nhất lên đầu)
+// GET /api/tasks - Lấy danh sách tasks cá nhân (phân tách theo từng tài khoản)
 export async function GET() {
   try {
+    const session = await getCurrentUser();
+
+    // Logic chuẩn:
+    // 1. Chỉ lấy task cá nhân (teamId: null), không lấy lẫn task của các Nhóm/Team
+    // 2. Nếu đã đăng nhập: chỉ lấy task của chính tài khoản này (hoặc task demo chung creatorId: null)
+    // 3. Nếu chưa đăng nhập: chỉ hiển thị task demo chung
+    const whereCondition = session
+      ? {
+          teamId: null,
+          OR: [
+            { creatorId: session.userId },
+            { creatorId: null },
+          ],
+        }
+      : {
+          teamId: null,
+          creatorId: null,
+        };
+
     const tasks = await prisma.task.findMany({
+      where: whereCondition,
       include: {
         assignee: { select: { id: true, name: true, email: true } },
         creator: { select: { id: true, name: true, email: true } },
