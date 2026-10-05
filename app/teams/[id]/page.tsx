@@ -549,7 +549,7 @@ export default function TeamDetailPage({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm task theo tên hoặc mô tả..."
-                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 py-1.5 pl-8 pr-3 text-xs text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
               />
             </div>
 
@@ -557,7 +557,7 @@ export default function TeamDetailPage({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-slate-50/50 py-1.5 px-3 text-xs text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+              className="rounded-lg border border-slate-200 bg-slate-50 py-1.5 px-3 text-xs text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:bg-slate-900"
             >
               <option value="ALL">Mọi Trạng Thái</option>
               <option value="TODO">To Do (Chưa thực hiện)</option>
@@ -569,7 +569,7 @@ export default function TeamDetailPage({
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-slate-50/50 py-1.5 px-3 text-xs text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+              className="rounded-lg border border-slate-200 bg-slate-50 py-1.5 px-3 text-xs text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:bg-slate-900"
             >
               <option value="ALL">Mọi Mức Ưu Tiên</option>
               <option value="HIGH">High (Ưu tiên cao)</option>
@@ -581,7 +581,7 @@ export default function TeamDetailPage({
             <select
               value={assigneeFilter}
               onChange={(e) => setAssigneeFilter(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-slate-50/50 py-1.5 px-3 text-xs text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+              className="rounded-lg border border-slate-200 bg-slate-50 py-1.5 px-3 text-xs text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:bg-slate-900"
             >
               <option value="ALL">Tất cả người phụ trách</option>
               <option value="ME">Công việc của tôi</option>
@@ -980,7 +980,7 @@ export default function TeamDetailPage({
                   value={taskTitle}
                   onChange={(e) => setTaskTitle(e.target.value)}
                   placeholder="Ví dụ: Thiết kế cơ sở dữ liệu cho tính năng Auth..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
                 />
               </div>
 
@@ -993,7 +993,7 @@ export default function TeamDetailPage({
                   value={taskDesc}
                   onChange={(e) => setTaskDesc(e.target.value)}
                   placeholder="Mô tả cụ thể yêu cầu, tài liệu tham khảo..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-white resize-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900 resize-none"
                 />
               </div>
 
@@ -1005,7 +1005,7 @@ export default function TeamDetailPage({
                   <select
                     value={taskStatus}
                     onChange={(e) => setTaskStatus(e.target.value as "TODO" | "IN_PROGRESS" | "DONE")}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:bg-slate-900"
                   >
                     <option value="TODO">To Do (Chưa thực hiện)</option>
                     <option value="IN_PROGRESS">In Progress (Đang làm)</option>
@@ -1020,7 +1020,7 @@ export default function TeamDetailPage({
                   <select
                     value={taskPriority}
                     onChange={(e) => setTaskPriority(e.target.value as "LOW" | "MEDIUM" | "HIGH")}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:bg-slate-900"
                   >
                     <option value="LOW">Low (Thấp)</option>
                     <option value="MEDIUM">Medium (Trung bình)</option>
@@ -1037,7 +1037,7 @@ export default function TeamDetailPage({
                   <select
                     value={taskAssigneeId}
                     onChange={(e) => setTaskAssigneeId(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:bg-slate-900"
                   >
                     <option value="">-- Chưa gán ai --</option>
                     {team.members.map((m) => (
@@ -1056,7 +1056,7 @@ export default function TeamDetailPage({
                     type="date"
                     value={taskDueDate}
                     onChange={(e) => setTaskDueDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:bg-slate-900"
                   />
                 </div>
               </div>
@@ -1117,7 +1117,7 @@ export default function TeamDetailPage({
                   value={memberEmail}
                   onChange={(e) => setMemberEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
                 />
                 <p className="mt-1.5 text-[11px] text-slate-400">
                   Lưu ý: Thành viên cần đã có tài khoản trên hệ thống để được thêm vào nhóm.
@@ -1172,7 +1172,7 @@ export default function TeamDetailPage({
                   required
                   value={teamNameEdit}
                   onChange={(e) => setTeamNameEdit(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:bg-slate-900"
                 />
               </div>
 
@@ -1184,7 +1184,7 @@ export default function TeamDetailPage({
                   rows={3}
                   value={teamDescEdit}
                   onChange={(e) => setTeamDescEdit(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-white resize-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:bg-slate-900 resize-none"
                 />
               </div>
 
