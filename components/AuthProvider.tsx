@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const userRef = useRef<UserSession | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
   const lastFocusRefreshRef = useRef(0);
+  const authRequestIdRef = useRef(0);
 
   useEffect(() => {
     pathnameRef.current = pathname;
@@ -60,13 +61,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchCurrentUser = useCallback(
     async (silent = false): Promise<UserSession | null> => {
+      const requestId = ++authRequestIdRef.current;
       try {
         const res = await fetch("/api/auth/me", {
           cache: "no-store",
           credentials: "same-origin",
         });
+        if (requestId !== authRequestIdRef.current) {
+          return userRef.current;
+        }
         if (res.ok) {
           const data = await res.json();
+          if (requestId !== authRequestIdRef.current) {
+            return userRef.current;
+          }
           const nextUser: UserSession | null = data.user || null;
           setUser(nextUser);
           return nextUser;
@@ -74,10 +82,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!silent) setUser(null);
         return silent ? userRef.current : null;
       } catch {
+        if (requestId !== authRequestIdRef.current) {
+          return userRef.current;
+        }
         if (!silent) setUser(null);
         return silent ? userRef.current : null;
       } finally {
-        if (!silent) setLoading(false);
+        if (requestId === authRequestIdRef.current) {
+          setLoading(false);
+        }
       }
     },
     []
