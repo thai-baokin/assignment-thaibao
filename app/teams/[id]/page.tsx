@@ -135,9 +135,9 @@ export default function TeamDetailPage({
   const [teamDescEdit, setTeamDescEdit] = useState("");
   const [teamSubmitting, setTeamSubmitting] = useState(false);
 
-  const fetchTeamData = useCallback(async () => {
+  const fetchTeamData = useCallback(async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
       setError(null);
       const res = await fetch(`/api/teams/${teamId}`);
       if (!res.ok) {
@@ -149,15 +149,18 @@ export default function TeamDetailPage({
       setTeamNameEdit(data.name);
       setTeamDescEdit(data.description || "");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Đã xảy ra lỗi khi tải dữ liệu.");
+      if (isInitial) {
+        setError(err instanceof Error ? err.message : "Đã xảy ra lỗi khi tải dữ liệu.");
+      }
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   }, [teamId]);
 
   useEffect(() => {
-    fetchTeamData();
+    fetchTeamData(true);
   }, [fetchTeamData]);
+
 
   // Xác định vai trò của người dùng hiện tại (Owner, Admin, Member)
   const currentMember = team?.members ? team.members.find((m) => m.userId === user?.id) : undefined;
@@ -296,12 +299,27 @@ export default function TeamDetailPage({
       }
 
       setIsTaskModalOpen(false);
-      fetchTeamData();
 
-      // Broadcast Real-time event tới các thành viên khác
+      // Cập nhật ngay local state tức thì thay vì gọi lại fetchTeamData() tốn tài nguyên
       if (editingTask) {
+        setTeam((prev) =>
+          prev
+            ? {
+                ...prev,
+                tasks: prev.tasks.map((t) => (t.id === savedTask.id ? savedTask : t)),
+              }
+            : prev
+        );
         broadcastTeamEvent("task-updated", savedTask);
       } else {
+        setTeam((prev) =>
+          prev
+            ? {
+                ...prev,
+                tasks: [savedTask, ...prev.tasks],
+              }
+            : prev
+        );
         broadcastTeamEvent("task-created", savedTask);
       }
     } catch (err: unknown) {
@@ -311,8 +329,19 @@ export default function TeamDetailPage({
     }
   };
 
-  // Quick Status change (for Kanban board quick action)
+  // Quick Status change với Optimistic UI (chuyển trạng thái tức thì 0ms)
   const handleQuickStatusChange = async (task: TaskItem, newStatus: "TODO" | "IN_PROGRESS" | "DONE") => {
+    const previousTasks = team?.tasks || [];
+
+    // Cập nhật ngay trên UI ngay lập tức
+    setTeam((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        tasks: prev.tasks.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)),
+      };
+    });
+
     try {
       const res = await fetch(`/api/tasks/${task.id}`, {
         method: "PUT",
@@ -321,19 +350,16 @@ export default function TeamDetailPage({
       });
       if (res.ok) {
         const updatedTask = await res.json();
-        // Cập nhật ngay local state
-        setTeam((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            tasks: prev.tasks.map((t) => (t.id === task.id ? updatedTask : t)),
-          };
-        });
         // Broadcast Real-time event cho các thành viên khác
         broadcastTeamEvent("task-updated", updatedTask);
+      } else {
+        // Rollback nếu máy chủ báo lỗi
+        setTeam((prev) => (prev ? { ...prev, tasks: previousTasks } : prev));
       }
     } catch (err) {
       console.error(err);
+      // Rollback nếu mất mạng
+      setTeam((prev) => (prev ? { ...prev, tasks: previousTasks } : prev));
     }
   };
 

@@ -65,6 +65,10 @@ model Task {
   assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@index([teamId])
+  @@index([creatorId])
+  @@index([assigneeId])
 }
 
 model Message {
@@ -75,6 +79,8 @@ model Message {
   senderId  String
   sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+
+  @@index([teamId, createdAt])
 }
 
 model Notification {
@@ -87,4 +93,6 @@ model Notification {
   relatedId String?  // taskId or teamId
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  @@index([userId, read])
 }

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/notifications - Lấy thông báo của người dùng hiện tại
 export async function GET() {
   try {
@@ -10,15 +12,16 @@ export async function GET() {
       return NextResponse.json({ error: "Vui lòng đăng nhập." }, { status: 401 });
     }
 
-    const notifications = await prisma.notification.findMany({
-      where: { userId: session.userId },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    });
-
-    const unreadCount = await prisma.notification.count({
-      where: { userId: session.userId, read: false },
-    });
+    const [notifications, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where: { userId: session.userId },
+        orderBy: { createdAt: "desc" },
+        take: 30,
+      }),
+      prisma.notification.count({
+        where: { userId: session.userId, read: false },
+      }),
+    ]);
 
     return NextResponse.json({ notifications, unreadCount }, { status: 200 });
   } catch (error) {

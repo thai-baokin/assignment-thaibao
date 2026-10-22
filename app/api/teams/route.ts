@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/teams - Lấy danh sách teams mà người dùng hiện tại thuộc về
 export async function GET() {
   try {

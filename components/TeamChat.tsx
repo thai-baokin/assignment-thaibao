@@ -126,8 +126,11 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
         }
       });
 
-    // Polling dự phòng mỗi 6s để đảm bảo đồng bộ
+    // Polling dự phòng mỗi 25s (kết hợp Supabase Realtime broadcast tức thì)
     const pollInterval = setInterval(async () => {
+      // Chỉ poll nếu tab đang active
+      if (typeof document !== "undefined" && document.hidden) return;
+
       try {
         const res = await fetch(`/api/teams/${teamId}/messages`);
         if (res.ok) {
@@ -143,7 +146,7 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
       } catch {
         // bỏ qua
       }
-    }, 6000);
+    }, 25000);
 
     return () => {
       supabase.removeChannel(channel);
@@ -172,13 +175,32 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
     }, 300);
   };
 
-  // Gửi tin nhắn
+  // Gửi tin nhắn với Optimistic Update (hiển thị tức thì không độ trễ)
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const content = inputText.trim();
     if (!content || sending || !user) return;
 
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg: ChatMessage = {
+      id: tempId,
+      content,
+      teamId,
+      senderId: user.id,
+      createdAt: new Date().toISOString(),
+      sender: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    };
+
+    // 1. Hiển thị ngay trên UI và reset ô nhập liệu tức thì
+    setMessages((prev) => [...prev, optimisticMsg]);
+    setInputText("");
+    setTimeout(() => scrollToBottom("smooth"), 50);
     setSending(true);
+
     try {
       const res = await fetch(`/api/teams/${teamId}/messages`, {
         method: "POST",
@@ -188,15 +210,12 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
 
       if (res.ok) {
         const newMsg: ChatMessage = await res.json();
-        // Cập nhật ngay trên client người gửi
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === newMsg.id)) return prev;
-          return [...prev, newMsg];
-        });
-        setInputText("");
-        setTimeout(() => scrollToBottom("smooth"), 80);
+        // Thay thế tin nhắn tạm thời bằng dữ liệu chính thức từ DB
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? newMsg : m))
+        );
 
-        // Broadcast tin nhắn tới tất cả thành viên khác trong phòng chat qua Supabase
+        // Broadcast tin nhắn tới tất cả thành viên khác trong phòng chat qua Supabase Realtime
         try {
           const channel = supabase.channel(`team-room-${teamId}`);
           await channel.send({
@@ -208,11 +227,16 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
           // Bỏ qua
         }
       } else {
+        // Revert nếu lỗi
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        setInputText(content);
         const errData = await res.json();
         alert(errData.error || "Không thể gửi tin nhắn.");
       }
     } catch (error) {
       console.error("Lỗi gửi tin nhắn:", error);
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setInputText(content);
     } finally {
       setSending(false);
     }

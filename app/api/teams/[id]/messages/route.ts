@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
@@ -18,14 +20,21 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     const team = await prisma.team.findUnique({
       where: { id: teamId },
-      include: { members: true },
+      select: {
+        id: true,
+        ownerId: true,
+        members: {
+          where: { userId: session.userId },
+          select: { id: true },
+        },
+      },
     });
 
     if (!team) {
       return NextResponse.json({ error: "Không tìm thấy nhóm." }, { status: 404 });
     }
 
-    const isMember = team.members.some((m) => m.userId === session.userId);
+    const isMember = team.members.length > 0;
     const isOwner = team.ownerId === session.userId;
 
     if (!isMember && !isOwner) {
@@ -43,6 +52,7 @@ export async function GET(request: Request, { params }: RouteParams) {
         },
       },
       orderBy: { createdAt: "asc" },
+      take: 100,
     });
 
     return NextResponse.json(messages, { status: 200 });
@@ -70,14 +80,21 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     const team = await prisma.team.findUnique({
       where: { id: teamId },
-      include: { members: true },
+      select: {
+        id: true,
+        ownerId: true,
+        members: {
+          where: { userId: session.userId },
+          select: { id: true },
+        },
+      },
     });
 
     if (!team) {
       return NextResponse.json({ error: "Không tìm thấy nhóm." }, { status: 404 });
     }
 
-    const isMember = team.members.some((m) => m.userId === session.userId);
+    const isMember = team.members.length > 0;
     const isOwner = team.ownerId === session.userId;
 
     if (!isMember && !isOwner) {
