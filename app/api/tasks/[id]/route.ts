@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getUserTeamRole, canDeleteTask, canManageTask } from "@/lib/permissions";
 import { createInAppNotification } from "@/lib/notifications";
+import { logActivity } from "@/lib/activity";
+import { broadcastRealtime, teamTasksTopic } from "@/lib/realtime-broadcast";
 
 export const dynamic = "force-dynamic";
 
@@ -119,6 +121,17 @@ export async function PUT(request: Request, { params }: RouteParams) {
       });
     }
 
+    if (existingTask.teamId && session) {
+      await logActivity({
+        teamId: existingTask.teamId,
+        userId: session.userId,
+        action: "TASK_UPDATED",
+        detail: `đã cập nhật công việc "${updatedTask.title}"`,
+      });
+
+      await broadcastRealtime(teamTasksTopic(existingTask.teamId), "task-updated", updatedTask);
+    }
+
     return NextResponse.json(updatedTask, { status: 200 });
   } catch (error) {
     console.error("Lỗi khi cập nhật task:", error);
@@ -188,9 +201,22 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       }
     }
 
+    if (existingTask.teamId && session) {
+      await logActivity({
+        teamId: existingTask.teamId,
+        userId: session.userId,
+        action: "TASK_DELETED",
+        detail: `đã xóa công việc "${existingTask.title}"`,
+      });
+    }
+
     await prisma.task.delete({
       where: { id },
     });
+
+    if (existingTask.teamId) {
+      await broadcastRealtime(teamTasksTopic(existingTask.teamId), "task-deleted", { id });
+    }
 
     return NextResponse.json(
       { message: "Đã xóa công việc thành công.", id },

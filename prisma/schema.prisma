@@ -16,12 +16,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ownedTeams     Team[]       @relation("TeamOwner")
+  ownedTeams     Team[]        @relation("TeamOwner")
   memberships    TeamMember[]
-  assignedTasks  Task[]       @relation("TaskAssignee")
-  createdTasks   Task[]       @relation("TaskCreator")
+  assignedTasks  Task[]        @relation("TaskAssignee")
+  createdTasks   Task[]        @relation("TaskCreator")
   messages       Message[]
   notifications  Notification[]
+  activities     ActivityLog[]
 }
 
 model Team {
@@ -33,9 +34,10 @@ model Team {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  members  TeamMember[]
-  tasks    Task[]
-  messages Message[]
+  members    TeamMember[]
+  tasks      Task[]
+  messages   Message[]
+  activities ActivityLog[]
 }
 
 model TeamMember {
@@ -72,15 +74,33 @@ model Task {
 }
 
 model Message {
+  id             String   @id @default(cuid())
+  content        String
+  teamId         String
+  team           Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  attachmentUrl  String?
+  attachmentName String?
+  attachmentType String?
+  createdAt      DateTime @default(now())
+
+  @@index([teamId, createdAt])
+}
+
+model ActivityLog {
   id        String   @id @default(cuid())
-  content   String
   teamId    String
   team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  senderId  String
-  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  detail    String
+  metadata  String?
   createdAt DateTime @default(now())
 
   @@index([teamId, createdAt])
+  @@index([userId])
 }
 
 model Notification {

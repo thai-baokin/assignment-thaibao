@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
-import { supabase } from "@/lib/supabase-client";
+import { broadcastRealtime, notificationsTopic } from "@/lib/realtime-broadcast";
 
-export type NotificationType = "ASSIGNED_TASK" | "ADDED_TO_TEAM";
+export type NotificationType = "ASSIGNED_TASK" | "ADDED_TO_TEAM" | "TEAM_UPDATE";
 
 interface CreateNotificationParams {
   userId: string;
@@ -12,7 +12,8 @@ interface CreateNotificationParams {
 }
 
 /**
- * Tạo thông báo trong database và gửi broadcast realtime qua Supabase
+ * Tạo thông báo trong database và gửi broadcast realtime qua Supabase Realtime REST API.
+ * Dùng REST API thay vì WebSocket để hoạt động ổn định trên môi trường serverless (Vercel).
  */
 export async function createInAppNotification({
   userId,
@@ -33,21 +34,7 @@ export async function createInAppNotification({
       },
     });
 
-    // Phát broadcast realtime tới channel riêng của user (nếu Supabase client được cấu hình)
-    try {
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        const channel = supabase.channel(`notifications:user-${userId}`);
-        await channel.send({
-          type: "broadcast",
-          event: "new-notification",
-          payload: notification,
-        });
-        supabase.removeChannel(channel);
-      }
-    } catch (err) {
-      // Bỏ qua lỗi socket broadcast nếu môi trường chưa bật realtime
-      console.warn("Realtime broadcast notification warning:", err);
-    }
+    await broadcastRealtime(notificationsTopic(userId), "new-notification", notification);
 
     return notification;
   } catch (error) {

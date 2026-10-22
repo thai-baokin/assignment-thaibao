@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { createInAppNotification } from "@/lib/notifications";
+import { logActivity } from "@/lib/activity";
+import { broadcastRealtime, teamTasksTopic } from "@/lib/realtime-broadcast";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -134,6 +136,15 @@ export async function POST(request: Request, { params }: RouteParams) {
         relatedId: task.id,
       });
     }
+
+    await logActivity({
+      teamId,
+      userId: session.userId,
+      action: "TASK_CREATED",
+      detail: `đã tạo công việc "${task.title}"`,
+    });
+
+    await broadcastRealtime(teamTasksTopic(teamId), "task-created", task);
 
     return NextResponse.json(task, { status: 201 });
   } catch (error) {

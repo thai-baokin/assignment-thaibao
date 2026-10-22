@@ -29,6 +29,8 @@ import {
   MessageSquare,
   Shield,
   ArrowUpDown,
+  History,
+  RefreshCw,
 } from "lucide-react";
 import TeamChat from "@/components/TeamChat";
 import { supabase } from "@/lib/supabase-client";
@@ -83,6 +85,18 @@ interface TeamDetail {
   tasks: TaskItem[];
 }
 
+interface ActivityItem {
+  id: string;
+  action: string;
+  detail: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+}
+
 export default function TeamDetailPage({
   params,
 }: {
@@ -97,10 +111,16 @@ export default function TeamDetailPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Tab: 'tasks' | 'members' | 'chat'
-  const [activeTab, setActiveTab] = useState<"tasks" | "members" | "chat">("tasks");
+  // Tab: 'tasks' | 'members' | 'chat' | 'activity'
+  const [activeTab, setActiveTab] = useState<"tasks" | "members" | "chat" | "activity">(
+    "tasks"
+  );
   // Task View mode: 'board' | 'table'
   const [viewMode, setViewMode] = useState<"board" | "table">("board");
+
+  // Activity log
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -161,6 +181,21 @@ export default function TeamDetailPage({
     fetchTeamData(true);
   }, [fetchTeamData]);
 
+  const fetchActivity = useCallback(async () => {
+    try {
+      setActivityLoading(true);
+      const res = await fetch(`/api/teams/${teamId}/activity`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) setActivities(data);
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải lịch sử hoạt động:", error);
+    } finally {
+      setActivityLoading(false);
+    }
+  }, [teamId]);
+
 
   // Xác định vai trò của người dùng hiện tại (Owner, Admin, Member)
   const currentMember = team?.members ? team.members.find((m) => m.userId === user?.id) : undefined;
@@ -174,31 +209,13 @@ export default function TeamDetailPage({
   const adminIds = team?.members ? team.members.filter((m) => m.role === "ADMIN").map((m) => m.userId) : [];
 
 
-  // Helper phát broadcast event tới các thành viên khác trong nhóm qua Supabase Channel
-  const broadcastTeamEvent = useCallback(
-    async (event: string, payload: unknown) => {
-      try {
-        const channel = supabase.channel(`team-room-${teamId}`);
-        await channel.send({
-          type: "broadcast",
-          event,
-          payload,
-        });
-      } catch (err) {
-        console.warn("Lỗi broadcast team event:", err);
-      }
-    },
-    [teamId]
-  );
-
-  // Lắng nghe Real-time Task Board Updates từ các thành viên khác
+  // Lắng nghe Real-time Task Board & Member Updates từ các thành viên khác.
+  // Dùng channel riêng cho task/member để không xung đột với channel chat (presence).
   useEffect(() => {
     if (!teamId) return;
 
-    const channelName = `team-room-${teamId}`;
-    const channel = supabase.channel(channelName);
-
-    channel
+    const taskChannel = supabase.channel(`team-tasks-${teamId}`);
+    taskChannel
       .on("broadcast", { event: "task-created" }, (event) => {
         const newTask = event.payload as TaskItem;
         if (newTask && newTask.teamId === teamId) {
@@ -230,13 +247,21 @@ export default function TeamDetailPage({
           });
         }
       })
+      .subscribe();
+
+    const memberChannel = supabase.channel(`team-members-${teamId}`);
+    memberChannel
       .on("broadcast", { event: "member-updated" }, () => {
+        fetchTeamData();
+      })
+      .on("broadcast", { event: "team-updated" }, () => {
         fetchTeamData();
       })
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(taskChannel);
+      supabase.removeChannel(memberChannel);
     };
   }, [teamId, fetchTeamData]);
 
@@ -310,7 +335,6 @@ export default function TeamDetailPage({
               }
             : prev
         );
-        broadcastTeamEvent("task-updated", savedTask);
       } else {
         setTeam((prev) =>
           prev
@@ -320,7 +344,6 @@ export default function TeamDetailPage({
               }
             : prev
         );
-        broadcastTeamEvent("task-created", savedTask);
       }
     } catch (err: unknown) {
       setTaskError(err instanceof Error ? err.message : "Lỗi khi lưu task.");
@@ -350,8 +373,14 @@ export default function TeamDetailPage({
       });
       if (res.ok) {
         const updatedTask = await res.json();
-        // Broadcast Real-time event cho các thành viên khác
-        broadcastTeamEvent("task-updated", updatedTask);
+        setTeam((prev) =>
+          prev
+            ? {
+                ...prev,
+                tasks: prev.tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+              }
+            : prev
+        );
       } else {
         // Rollback nếu máy chủ báo lỗi
         setTeam((prev) => (prev ? { ...prev, tasks: previousTasks } : prev));
@@ -378,8 +407,6 @@ export default function TeamDetailPage({
         if (!prev) return prev;
         return { ...prev, tasks: prev.tasks.filter((t) => t.id !== task.id) };
       });
-      // Broadcast xóa task cho các thành viên khác
-      broadcastTeamEvent("task-deleted", { id: task.id });
     } catch (err) {
       alert("Lỗi khi xóa công việc.");
     }
@@ -412,7 +439,6 @@ export default function TeamDetailPage({
       setMemberRole("MEMBER");
       setIsAddMemberOpen(false);
       fetchTeamData();
-      broadcastTeamEvent("member-updated", { action: "added" });
     } catch (err: unknown) {
       setMemberError(err instanceof Error ? err.message : "Lỗi khi thêm thành viên.");
     } finally {
@@ -434,7 +460,6 @@ export default function TeamDetailPage({
       });
       if (res.ok) {
         fetchTeamData();
-        broadcastTeamEvent("member-updated", { userId: targetUserId, role: nextRole });
       } else {
         const data = await res.json();
         alert(data.error || "Không thể thay đổi vai trò.");
@@ -462,8 +487,6 @@ export default function TeamDetailPage({
         alert(data.error || "Không thể xóa thành viên.");
         return;
       }
-
-      broadcastTeamEvent("member-updated", { action: "removed", userId: targetUserId });
 
       if (isSelf) {
         router.push("/teams");
@@ -682,6 +705,21 @@ export default function TeamDetailPage({
             <span>Trò chuyện nhóm</span>
             <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
           </button>
+
+          <button
+            onClick={() => {
+              setActiveTab("activity");
+              fetchActivity();
+            }}
+            className={`pb-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+              activeTab === "activity"
+                ? "border-black text-black dark:border-white dark:text-white"
+                : "border-transparent text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white"
+            }`}
+          >
+            <History className="h-4 w-4" />
+            <span>Hoạt động</span>
+          </button>
         </div>
 
 
@@ -820,10 +858,11 @@ export default function TeamDetailPage({
                     {/* Column Task Cards */}
                     <div className="flex-1 space-y-3 overflow-y-auto">
                       {columnTasks.map((task) => {
-                        const canDelete =
+                        const canManageTask =
+                          isOwner ||
+                          isAdmin ||
                           user?.id === task.creatorId ||
-                          user?.id === task.assigneeId ||
-                          user?.id === team.ownerId;
+                          user?.id === task.assigneeId;
 
                         const priorityBadge =
                           task.priority === "HIGH"
@@ -850,15 +889,15 @@ export default function TeamDetailPage({
                                   {priorityLabel}
                                 </span>
 
-                                <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    onClick={() => openEditTask(task)}
-                                    title="Sửa công việc"
-                                    className="px-2 py-0.5 rounded-md text-[11px] font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 cursor-pointer"
-                                  >
-                                    Sửa
-                                  </button>
-                                  {canDelete && (
+                                {canManageTask && (
+                                  <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                      onClick={() => openEditTask(task)}
+                                      title="Sửa công việc"
+                                      className="px-2 py-0.5 rounded-md text-[11px] font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 cursor-pointer"
+                                    >
+                                      Sửa
+                                    </button>
                                     <button
                                       onClick={() => handleDeleteTask(task)}
                                       title="Xóa công việc"
@@ -866,8 +905,8 @@ export default function TeamDetailPage({
                                     >
                                       Xóa
                                     </button>
-                                  )}
-                                </div>
+                                  </div>
+                                )}
                               </div>
 
                               <h4 className="text-sm font-bold text-black dark:text-white leading-snug">
@@ -900,32 +939,34 @@ export default function TeamDetailPage({
                               </div>
 
                               {/* Quick Move Buttons */}
-                              <div className="flex items-center gap-1 pt-1 justify-end">
-                                {colStatus !== "TODO" && (
-                                  <button
-                                    onClick={() => handleQuickStatusChange(task, "TODO")}
-                                    className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black cursor-pointer transition-colors"
-                                  >
-                                    Cần làm
-                                  </button>
-                                )}
-                                {colStatus !== "IN_PROGRESS" && (
-                                  <button
-                                    onClick={() => handleQuickStatusChange(task, "IN_PROGRESS")}
-                                    className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black cursor-pointer transition-colors"
-                                  >
-                                    Đang làm
-                                  </button>
-                                )}
-                                {colStatus !== "DONE" && (
-                                  <button
-                                    onClick={() => handleQuickStatusChange(task, "DONE")}
-                                    className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black cursor-pointer transition-colors"
-                                  >
-                                    Hoàn thành
-                                  </button>
-                                )}
-                              </div>
+                              {canManageTask && (
+                                <div className="flex items-center gap-1 pt-1 justify-end">
+                                  {colStatus !== "TODO" && (
+                                    <button
+                                      onClick={() => handleQuickStatusChange(task, "TODO")}
+                                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black cursor-pointer transition-colors"
+                                    >
+                                      Cần làm
+                                    </button>
+                                  )}
+                                  {colStatus !== "IN_PROGRESS" && (
+                                    <button
+                                      onClick={() => handleQuickStatusChange(task, "IN_PROGRESS")}
+                                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black cursor-pointer transition-colors"
+                                    >
+                                      Đang làm
+                                    </button>
+                                  )}
+                                  {colStatus !== "DONE" && (
+                                    <button
+                                      onClick={() => handleQuickStatusChange(task, "DONE")}
+                                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black cursor-pointer transition-colors"
+                                    >
+                                      Hoàn thành
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -954,10 +995,11 @@ export default function TeamDetailPage({
                   </thead>
                   <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
                     {filteredTasks.map((task) => {
-                      const canDelete =
+                      const canManageTask =
+                        isOwner ||
+                        isAdmin ||
                         user?.id === task.creatorId ||
-                        user?.id === task.assigneeId ||
-                        user?.id === team.ownerId;
+                        user?.id === task.assigneeId;
 
                       const statusLabel =
                         task.status === "DONE"
@@ -1019,22 +1061,26 @@ export default function TeamDetailPage({
                             {task.dueDate ? new Date(task.dueDate).toLocaleDateString("vi-VN") : "—"}
                           </td>
                           <td className="py-3.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => openEditTask(task)}
-                                className="px-2 py-1 rounded-md text-xs font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 cursor-pointer"
-                              >
-                                Sửa
-                              </button>
-                              {canDelete && (
+                            {canManageTask ? (
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => openEditTask(task)}
+                                  className="px-2 py-1 rounded-md text-xs font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 cursor-pointer"
+                                >
+                                  Sửa
+                                </button>
                                 <button
                                   onClick={() => handleDeleteTask(task)}
                                   className="px-2 py-1 rounded-md text-xs font-semibold text-zinc-500 hover:text-rose-600 hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer"
                                 >
                                   Xóa
                                 </button>
-                              )}
-                            </div>
+                              </div>
+                            ) : (
+                              <span className="text-[11px] font-medium text-zinc-400">
+                                Chỉ xem
+                              </span>
+                            )}
                           </td>
                         </tr>
                       );
@@ -1177,6 +1223,69 @@ export default function TeamDetailPage({
           ownerId={team.ownerId}
           adminIds={adminIds}
         />
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB 4: ACTIVITY LOG / AUDIT TRAIL                              */}
+      {/* ============================================================== */}
+      {activeTab === "activity" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-bold text-black dark:text-white">
+                Lịch sử hoạt động
+              </h3>
+              <p className="text-xs text-zinc-500">
+                Ai đã làm gì trong nhóm và khi nào.
+              </p>
+            </div>
+            <button
+              onClick={fetchActivity}
+              className="btn-3d-secondary px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${activityLoading ? "animate-spin" : ""}`} />
+              <span>Làm mới</span>
+            </button>
+          </div>
+
+          <div className="card-3d rounded-2xl overflow-hidden shadow-2xs">
+            {activityLoading && activities.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-zinc-400">
+                <Loader2 className="h-6 w-6 animate-spin mb-2" />
+                <span className="text-xs">Đang tải lịch sử hoạt động...</span>
+              </div>
+            ) : activities.length === 0 ? (
+              <div className="py-16 text-center text-zinc-400">
+                <History className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                <p className="text-xs font-semibold">Chưa có hoạt động nào</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {activities.map((item) => (
+                  <div key={item.id} className="flex items-start gap-3 p-4">
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
+                      <History className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-black dark:text-white">
+                        {item.user?.name || "Hệ thống"}{" "}
+                        <span className="font-normal text-zinc-500 dark:text-zinc-400">
+                          {item.detail}
+                        </span>
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-zinc-400">
+                        {new Date(item.createdAt).toLocaleString("vi-VN")}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+                      {item.action}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
 

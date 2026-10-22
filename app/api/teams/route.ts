@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +77,13 @@ export async function POST(request: Request) {
       });
 
       return team;
+    });
+
+    await logActivity({
+      teamId: newTeam.id,
+      userId: session.userId,
+      action: "TEAM_CREATED",
+      detail: `đã tạo nhóm "${newTeam.name}"`,
     });
 
     // Lấy chi tiết team sau khi tạo kèm thông tin owner & members

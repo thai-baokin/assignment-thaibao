@@ -1,7 +1,16 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Send, Users, Sparkles, MessageSquare, Loader2, Smile } from "lucide-react";
+import {
+  Send,
+  Users,
+  MessageSquare,
+  Loader2,
+  Paperclip,
+  X,
+  FileText,
+  Download,
+} from "lucide-react";
 import { useAuth } from "./AuthProvider";
 import { supabase } from "@/lib/supabase-client";
 
@@ -11,12 +20,17 @@ export interface ChatMessage {
   teamId: string;
   senderId: string;
   createdAt: string;
+  attachmentUrl?: string | null;
+  attachmentName?: string | null;
+  attachmentType?: string | null;
   sender?: {
     id: string;
     name?: string;
     email?: string;
   } | null;
 }
+
+const MAX_ATTACHMENT_SIZE = 1.5 * 1024 * 1024;
 
 interface TeamChatProps {
   teamId: string;
@@ -33,9 +47,17 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
   const [sending, setSending] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<{ id: string; name: string }[]>([]);
   const [typingUsers, setTypingUsers] = useState<{ [userId: string]: string }>({});
+  const [attachment, setAttachment] = useState<{
+    url: string;
+    name: string;
+    type: string;
+    size: number;
+  } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior });
@@ -67,7 +89,7 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
   useEffect(() => {
     if (!user || !teamId) return;
 
-    const channelName = `team-room-${teamId}`;
+    const channelName = `team-chat-${teamId}`;
     const channel = supabase.channel(channelName, {
       config: {
         presence: {
@@ -75,6 +97,7 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
         },
       },
     });
+    channelRef.current = channel;
 
     // 1. Lắng nghe tin nhắn mới qua Broadcast
     channel.on("broadcast", { event: "new-message" }, (event) => {
@@ -163,6 +186,8 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
     }, 25000);
 
     return () => {
+      channelRef.current = null;
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       supabase.removeChannel(channel);
       clearInterval(pollInterval);
     };
@@ -177,8 +202,7 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
 
     typingTimeoutRef.current = setTimeout(() => {
       try {
-        const channel = supabase.channel(`team-room-${teamId}`);
-        channel.send({
+        channelRef.current?.send({
           type: "broadcast",
           event: "typing",
           payload: { userId: user.id, userName: user.name },
@@ -189,11 +213,37 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
     }, 300);
   };
 
+  // Chọn tệp đính kèm (ảnh hoặc tài liệu)
+  const handleAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_ATTACHMENT_SIZE) {
+      alert("Tệp quá lớn. Vui lòng chọn tệp nhỏ hơn 1.5MB.");
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setAttachment({
+          url: reader.result,
+          name: file.name,
+          type: file.type || "application/octet-stream",
+          size: file.size,
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
   // Gửi tin nhắn với Optimistic Update (hiển thị tức thì không độ trễ)
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const content = inputText.trim();
-    if (!content || sending || !user) return;
+    if ((!content && !attachment) || sending || !user) return;
 
     const tempId = `temp-${Date.now()}`;
     const optimisticMsg: ChatMessage = {
@@ -202,6 +252,9 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
       teamId,
       senderId: user.id,
       createdAt: new Date().toISOString(),
+      attachmentUrl: attachment?.url || null,
+      attachmentName: attachment?.name || null,
+      attachmentType: attachment?.type || null,
       sender: {
         id: user.id,
         name: user.name,
@@ -212,6 +265,7 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
     // 1. Hiển thị ngay trên UI và reset ô nhập liệu tức thì
     setMessages((prev) => [...prev, optimisticMsg]);
     setInputText("");
+    setAttachment(null);
     setTimeout(() => scrollToBottom("smooth"), 50);
     setSending(true);
 
@@ -219,27 +273,23 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
       const res = await fetch(`/api/teams/${teamId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({
+          content,
+          attachmentUrl: optimisticMsg.attachmentUrl,
+          attachmentName: optimisticMsg.attachmentName,
+          attachmentType: optimisticMsg.attachmentType,
+        }),
       });
 
       if (res.ok) {
         const newMsg: ChatMessage = await res.json();
-        // Thay thế tin nhắn tạm thời bằng dữ liệu chính thức từ DB
-        setMessages((prev) =>
-          prev.map((m) => (m.id === tempId ? newMsg : m))
-        );
-
-        // Broadcast tin nhắn tới tất cả thành viên khác trong phòng chat qua Supabase Realtime
-        try {
-          const channel = supabase.channel(`team-room-${teamId}`);
-          await channel.send({
-            type: "broadcast",
-            event: "new-message",
-            payload: newMsg,
-          });
-        } catch {
-          // Bỏ qua
-        }
+        // Server đã broadcast realtime. Thay thế tin nhắn tạm và tránh trùng lặp
+        // nếu broadcast về trước khi API trả kết quả.
+        setMessages((prev) => {
+          const withoutTemp = prev.filter((m) => m.id !== tempId);
+          if (withoutTemp.some((m) => m.id === newMsg.id)) return withoutTemp;
+          return [...withoutTemp, newMsg];
+        });
       } else {
         // Revert nếu lỗi
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
@@ -376,7 +426,36 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
                         : "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 rounded-tl-xs border border-zinc-200/60 dark:border-zinc-800"
                     }`}
                   >
-                    {msg.content}
+                    {msg.content && <p className="whitespace-pre-wrap">{msg.content}</p>}
+
+                    {msg.attachmentUrl && (
+                      <div className={msg.content ? "mt-2" : ""}>
+                        {msg.attachmentType?.startsWith("image/") ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={msg.attachmentUrl}
+                            alt={msg.attachmentName || "Ảnh đính kèm"}
+                            className="max-h-52 w-auto max-w-full rounded-xl border border-white/20 object-contain"
+                          />
+                        ) : (
+                          <a
+                            href={msg.attachmentUrl}
+                            download={msg.attachmentName || "attachment"}
+                            className={`flex items-center gap-2 rounded-xl px-2.5 py-2 text-[11px] font-semibold underline-offset-2 hover:underline ${
+                              isMe
+                                ? "bg-white/15 text-white dark:bg-black/10 dark:text-black"
+                                : "bg-white text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
+                            }`}
+                          >
+                            <FileText className="h-4 w-4 shrink-0" />
+                            <span className="truncate max-w-[180px]">
+                              {msg.attachmentName || "Tệp đính kèm"}
+                            </span>
+                            <Download className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -398,11 +477,62 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
         </div>
       )}
 
+      {/* Attachment Preview */}
+      {attachment && (
+        <div className="flex items-center gap-2 border-t border-zinc-200 bg-zinc-50 px-3 pt-2.5 dark:border-zinc-800 dark:bg-zinc-900/60">
+          {attachment.type.startsWith("image/") ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={attachment.url}
+              alt={attachment.name}
+              className="h-10 w-10 rounded-lg border border-zinc-200 object-cover dark:border-zinc-700"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+              <FileText className="h-5 w-5" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[11px] font-semibold text-zinc-800 dark:text-zinc-100">
+              {attachment.name}
+            </p>
+            <p className="text-[10px] text-zinc-500">
+              {attachment.size >= 1024 * 1024
+                ? `${(attachment.size / 1024 / 1024).toFixed(2)} MB`
+                : `${Math.max(1, Math.round(attachment.size / 1024))} KB`}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAttachment(null)}
+            className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-200 hover:text-black dark:hover:bg-zinc-800 dark:hover:text-white cursor-pointer"
+            aria-label="Bỏ tệp đính kèm"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Message Input Box */}
       <form
         onSubmit={handleSendMessage}
         className="flex items-center gap-2 p-3 sm:p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950"
       >
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+          onChange={handleAttachmentChange}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          title="Đính kèm tệp hoặc ảnh (tối đa 1.5MB)"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-600 transition-colors hover:border-black hover:text-black dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-white dark:hover:text-white cursor-pointer"
+        >
+          <Paperclip className="h-4 w-4" />
+        </button>
         <input
           type="text"
           value={inputText}
@@ -412,7 +542,7 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
         />
         <button
           type="submit"
-          disabled={!inputText.trim() || sending}
+          disabled={(!inputText.trim() && !attachment) || sending}
           className="flex items-center justify-center gap-1.5 rounded-xl bg-black px-4 py-2.5 text-xs sm:text-sm font-bold text-white transition-all hover:bg-zinc-800 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-zinc-200 shadow-sm cursor-pointer"
         >
           {sending ? (

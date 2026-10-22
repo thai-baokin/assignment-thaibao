@@ -219,12 +219,13 @@
 - [X] **Tính năng điểm cộng (Bonus Features):**
   - **Typing Indicator:** Hiển thị thời gian thực `● ● ● [Tên] đang soạn tin nhắn...` khi có thành viên đang gõ.
   - **Online Presence:** Hiển thị số lượng và danh sách thành viên đang online trong phòng chat.
+  - **Đính kèm tệp/ảnh:** Gửi kèm ảnh hoặc tài liệu (tối đa 1.5MB), ảnh hiển thị trực tiếp và tệp có nút tải xuống.
 
 ### 2. Cập nhật Bảng công việc thời gian thực (Real-time Task Board Updates)
 - [X] Khi một thành viên tạo công việc mới (`POST /api/teams/:id/tasks`), task mới xuất hiện ngay trên bảng Kanban của các thành viên khác.
 - [X] Khi một thành viên chuyển trạng thái (Cần làm -> Đang làm -> Hoàn thành) hoặc chỉnh sửa task, sự thay đổi được phản ánh tức thì trên màn hình của tất cả thành viên khác.
 - [X] Khi xóa công việc, thẻ công việc lập tức biến mất trên mọi màn hình mà không cần refresh trang.
-- [X] Cơ chế Realtime đồng bộ trên kênh `team-room-${teamId}` của Supabase Realtime Channel.
+- [X] Cơ chế Realtime đồng bộ qua Supabase Realtime: kênh `team-tasks-${teamId}` cho task board và kênh `team-members-${teamId}` cho thành viên.
 
 ### 3. Hệ thống Thông báo (In-App Notifications)
 - [X] Người dùng nhận được thông báo in-app khi được phân công công việc mới (`ASSIGNED_TASK`).
@@ -236,6 +237,12 @@
   - Nút "Đã đọc tất cả" và click vào từng thông báo để đánh dấu đã đọc (`PUT /api/notifications/:id`).
   - Tự động chuyển hướng đến nhóm hoặc công việc liên quan khi bấm vào thông báo.
   - Thông báo xuất hiện theo thời gian thực (Realtime notification channel `notifications:user-${userId}`) kèm hiệu ứng âm thanh nhẹ Web Audio API.
+  - **Thông báo Desktop:** Xin quyền và hiển thị Notification API của trình duyệt khi tab đang chạy nền.
+
+### 3.1. Nhật ký hoạt động nhóm (Activity Log)
+- [X] Ghi lại các sự kiện quan trọng: tạo nhóm, cập nhật nhóm, thêm/xóa/đổi vai trò thành viên, tạo/sửa/xóa công việc.
+- [X] API `GET /api/teams/:id/activity` (chỉ thành viên nhóm) trả về 100 hoạt động gần nhất kèm người thực hiện.
+- [X] Tab **Hoạt động** trong trang chi tiết nhóm hiển thị timeline, thời gian và nút làm mới.
 
 ### 4. Hệ thống Phân quyền nâng cao (Advanced Role & Permission System - 3 Roles)
 - [X] Hệ thống phân quyền 3 cấp độ:
@@ -255,7 +262,7 @@
   - Hiển thị nút đổi vai trò `Thăng Admin / Hạ thành viên` độc quyền cho Trưởng nhóm.
   - Ẩn/hiện các nút thao tác xóa theo đúng ma trận quyền hạn.
 
-### 5. Danh sách 18 API Endpoints
+### 5. Danh sách 22 API Endpoints
 - [X] `POST /api/auth/register` – Đăng ký tài khoản
 - [X] `POST /api/auth/login` – Đăng nhập
 - [X] `POST /api/auth/logout` – Đăng xuất
@@ -277,6 +284,7 @@
 - [X] `GET /api/notifications` – Danh sách thông báo in-app
 - [X] `PUT /api/notifications` – Đánh dấu tất cả thông báo đã đọc
 - [X] `PUT /api/notifications/:id` – Đánh dấu một thông báo đã đọc
+- [X] `GET /api/teams/:id/activity` – Nhật ký hoạt động của nhóm (thành viên)
 
 ---
 

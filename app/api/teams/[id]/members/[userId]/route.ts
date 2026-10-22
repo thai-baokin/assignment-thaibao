@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getUserTeamRole, canChangeMemberRole, canRemoveMember } from "@/lib/permissions";
+import { logActivity } from "@/lib/activity";
+import { broadcastRealtime, teamMembersTopic } from "@/lib/realtime-broadcast";
 
 interface RouteParams {
   params: Promise<{ id: string; userId: string }>;
@@ -77,6 +79,20 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       },
     });
 
+    await logActivity({
+      teamId,
+      userId: session.userId,
+      action: "MEMBER_ROLE_CHANGED",
+      detail: `đã đổi vai trò của ${updated.user.name || updated.user.email} thành ${normalizedRole}`,
+    });
+
+    await broadcastRealtime(teamMembersTopic(teamId), "member-updated", {
+      teamId,
+      action: "role-changed",
+      userId: targetUserId,
+      role: normalizedRole,
+    });
+
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     console.error("Lỗi khi cập nhật vai trò thành viên:", error);
@@ -120,6 +136,9 @@ export async function DELETE(request: Request, { params }: RouteParams) {
           userId: targetUserId,
         },
       },
+      include: {
+        user: { select: { name: true, email: true } },
+      },
     });
 
     if (!memberRecord) {
@@ -153,6 +172,21 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       data: {
         assigneeId: null,
       },
+    });
+
+    await logActivity({
+      teamId,
+      userId: session.userId,
+      action: isSelf ? "MEMBER_LEFT" : "MEMBER_REMOVED",
+      detail: isSelf
+        ? "đã rời khỏi nhóm"
+        : `đã xóa ${memberRecord.user.name || memberRecord.user.email} khỏi nhóm`,
+    });
+
+    await broadcastRealtime(teamMembersTopic(teamId), "member-updated", {
+      teamId,
+      action: "removed",
+      userId: targetUserId,
     });
 
     return NextResponse.json(

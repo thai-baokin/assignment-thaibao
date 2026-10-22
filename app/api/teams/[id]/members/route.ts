@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getUserTeamRole, canAddMembers } from "@/lib/permissions";
 import { createInAppNotification } from "@/lib/notifications";
+import { logActivity } from "@/lib/activity";
+import { broadcastRealtime, teamMembersTopic } from "@/lib/realtime-broadcast";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -87,6 +89,19 @@ export async function POST(request: Request, { params }: RouteParams) {
       title: "Tham gia nhóm mới",
       message: `Bạn đã được thêm vào nhóm "${team.name}" với vai trò ${assignedRole === "ADMIN" ? "Quản trị viên (Admin)" : "Thành viên (Member)"}.`,
       relatedId: teamId,
+    });
+
+    await logActivity({
+      teamId,
+      userId: session.userId,
+      action: "MEMBER_ADDED",
+      detail: `đã thêm ${targetUser.name || targetUser.email} vào nhóm với vai trò ${assignedRole}`,
+    });
+
+    await broadcastRealtime(teamMembersTopic(teamId), "member-updated", {
+      teamId,
+      action: "added",
+      member: newMember,
     });
 
     return NextResponse.json(newMember, { status: 201 });

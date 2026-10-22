@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, CheckCheck, CheckSquare, Users, Sparkles, ExternalLink } from "lucide-react";
+import { Bell, CheckCheck, CheckSquare, Users } from "lucide-react";
 import { useAuth } from "./AuthProvider";
 import { supabase } from "@/lib/supabase-client";
 
@@ -24,6 +23,9 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [browserPermission, setBrowserPermission] = useState<
+    NotificationPermission | "unsupported"
+  >("default");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fetch danh sách thông báo
@@ -44,6 +46,28 @@ export default function NotificationBell() {
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
+
+  // Đồng bộ trạng thái quyền thông báo trình duyệt sau khi mount (tránh lệch hydration)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setBrowserPermission(
+        typeof window !== "undefined" && "Notification" in window
+          ? Notification.permission
+          : "unsupported"
+      );
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const requestBrowserPermission = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    try {
+      const result = await Notification.requestPermission();
+      setBrowserPermission(result);
+    } catch (error) {
+      console.error("Lỗi khi xin quyền thông báo trình duyệt:", error);
+    }
+  };
 
   // Real-time listener qua Supabase Realtime
   useEffect(() => {
@@ -76,6 +100,26 @@ export default function NotificationBell() {
             osc.stop(ctx.currentTime + 0.25);
           } catch {
             // Audio context có thể bị chặn nếu chưa tương tác người dùng
+          }
+
+          // Hiển thị thông báo desktop khi tab không ở foreground
+          if (
+            "Notification" in window &&
+            Notification.permission === "granted" &&
+            document.visibilityState !== "visible"
+          ) {
+            try {
+              const desktopNotification = new Notification(newNotif.title, {
+                body: newNotif.message,
+                tag: newNotif.id,
+              });
+              desktopNotification.onclick = () => {
+                window.focus();
+                desktopNotification.close();
+              };
+            } catch {
+              // Một số trình duyệt chặn Notification constructor
+            }
           }
         }
       })
@@ -205,6 +249,21 @@ export default function NotificationBell() {
               </button>
             )}
           </div>
+
+          {/* Bật thông báo desktop */}
+          {browserPermission === "default" && (
+            <button
+              onClick={requestBrowserPermission}
+              className="mt-1 w-full rounded-xl border border-dashed border-zinc-200 px-3 py-2 text-left text-[11px] font-semibold text-zinc-600 hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer transition-colors"
+            >
+              Bật thông báo trên desktop để không bỏ lỡ việc mới
+            </button>
+          )}
+          {browserPermission === "denied" && (
+            <p className="mt-1 px-3 py-1 text-[11px] text-zinc-400">
+              Thông báo desktop đang bị chặn trong cài đặt trình duyệt.
+            </p>
+          )}
 
           {/* Body / List */}
           <div className="max-h-80 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-900 py-1">

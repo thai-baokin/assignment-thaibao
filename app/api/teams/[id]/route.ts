@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getUserTeamRole, canEditTeam, canDeleteTeam } from "@/lib/permissions";
+import { logActivity } from "@/lib/activity";
+import { broadcastRealtime, teamMembersTopic } from "@/lib/realtime-broadcast";
 
 export const dynamic = "force-dynamic";
 
@@ -108,6 +110,19 @@ export async function PUT(request: Request, { params }: RouteParams) {
           },
         },
       },
+    });
+
+    await logActivity({
+      teamId,
+      userId: session.userId,
+      action: "TEAM_UPDATED",
+      detail: `đã cập nhật thông tin nhóm thành "${updatedTeam.name}"`,
+    });
+
+    await broadcastRealtime(teamMembersTopic(teamId), "team-updated", {
+      teamId,
+      name: updatedTeam.name,
+      description: updatedTeam.description,
     });
 
     return NextResponse.json(updatedTeam, { status: 200 });

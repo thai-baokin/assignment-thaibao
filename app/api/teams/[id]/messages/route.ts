@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { broadcastRealtime, teamChatTopic } from "@/lib/realtime-broadcast";
 
 export const dynamic = "force-dynamic";
+
+const MAX_ATTACHMENT_LENGTH = 2_500_000;
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -72,10 +75,33 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     const { id: teamId } = await params;
     const body = await request.json();
-    const { content } = body;
+    const content = typeof body.content === "string" ? body.content : "";
+    const attachmentUrl =
+      typeof body.attachmentUrl === "string" ? body.attachmentUrl : "";
+    const attachmentName =
+      typeof body.attachmentName === "string" ? body.attachmentName.slice(0, 255) : "";
+    const attachmentType =
+      typeof body.attachmentType === "string" ? body.attachmentType.slice(0, 120) : "";
 
-    if (!content || typeof content !== "string" || content.trim().length === 0) {
-      return NextResponse.json({ error: "Nội dung tin nhắn không được để trống." }, { status: 400 });
+    const hasAttachment = attachmentUrl.length > 0;
+
+    if (content.trim().length === 0 && !hasAttachment) {
+      return NextResponse.json(
+        { error: "Nội dung tin nhắn hoặc tệp đính kèm không được để trống." },
+        { status: 400 }
+      );
+    }
+
+    if (hasAttachment) {
+      if (!attachmentUrl.startsWith("data:")) {
+        return NextResponse.json({ error: "Tệp đính kèm không hợp lệ." }, { status: 400 });
+      }
+      if (attachmentUrl.length > MAX_ATTACHMENT_LENGTH) {
+        return NextResponse.json(
+          { error: "Tệp đính kèm quá lớn. Vui lòng chọn tệp nhỏ hơn 1.5MB." },
+          { status: 413 }
+        );
+      }
     }
 
     const team = await prisma.team.findUnique({
@@ -109,6 +135,9 @@ export async function POST(request: Request, { params }: RouteParams) {
         content: content.trim(),
         teamId,
         senderId: session.userId,
+        attachmentUrl: hasAttachment ? attachmentUrl : null,
+        attachmentName: hasAttachment ? attachmentName || "Tệp đính kèm" : null,
+        attachmentType: hasAttachment ? attachmentType || "application/octet-stream" : null,
       },
       include: {
         sender: {
@@ -116,6 +145,8 @@ export async function POST(request: Request, { params }: RouteParams) {
         },
       },
     });
+
+    await broadcastRealtime(teamChatTopic(teamId), "new-message", message);
 
     return NextResponse.json(message, { status: 201 });
   } catch (error) {
