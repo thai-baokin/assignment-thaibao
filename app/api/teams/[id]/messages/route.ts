@@ -76,6 +76,8 @@ export async function POST(request: Request, { params }: RouteParams) {
     const { id: teamId } = await params;
     const body = await request.json();
     const content = typeof body.content === "string" ? body.content : "";
+    const expectedUserId =
+      typeof body.expectedUserId === "string" ? body.expectedUserId : "";
     const attachmentUrl =
       typeof body.attachmentUrl === "string" ? body.attachmentUrl : "";
     const attachmentName =
@@ -84,6 +86,17 @@ export async function POST(request: Request, { params }: RouteParams) {
       typeof body.attachmentType === "string" ? body.attachmentType.slice(0, 120) : "";
 
     const hasAttachment = attachmentUrl.length > 0;
+
+    if (expectedUserId && expectedUserId !== session.userId) {
+      return NextResponse.json(
+        {
+          error:
+            "Phiên đăng nhập đã thay đổi. Tin nhắn chưa được gửi, vui lòng kiểm tra tài khoản hiện tại.",
+          code: "SESSION_MISMATCH",
+        },
+        { status: 409 }
+      );
+    }
 
     if (content.trim().length === 0 && !hasAttachment) {
       return NextResponse.json(

@@ -297,7 +297,8 @@ GitHub Repository URL: https://github.com/thai-baokin/assignment-thaibao
 Deployed Website URL: https://assignment-thaibao.vercel.app
 Test Account 1 (Owner): admin@taskpulse.io / password123
 
-Test Account 2 (Member): bao@taskpulse.io / password123
+Test Account 2 (Member): member@taskpulse.io / password123
+Multi-account testing note: Authentication uses one HttpOnly cookie per origin, so two accounts must be tested in separate browser profiles/windows (or one normal + one incognito window). Switching accounts in the same profile updates all tabs to the new account; the chat UI shows the active account to prevent sending under a stale session.
 Additional Notes: Assignment 3 & 4 extends Assignment 2 on the same codebase. Key additions include:
 1. Real-time Team Chat with persisted message history, typing indicators, and online presence via Supabase Realtime Broadcast.
 2. Live-updating Kanban task board across multiple users without page refresh.

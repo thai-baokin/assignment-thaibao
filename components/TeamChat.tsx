@@ -40,7 +40,9 @@ interface TeamChatProps {
 }
 
 export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: TeamChatProps) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const userId = user?.id;
+  const userName = user?.name;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -87,13 +89,13 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
 
   // Kết nối Real-time qua Supabase Channel (Broadcast & Presence)
   useEffect(() => {
-    if (!user || !teamId) return;
+    if (!userId || !teamId) return;
 
     const channelName = `team-chat-${teamId}`;
     const channel = supabase.channel(channelName, {
       config: {
         presence: {
-          key: user.id,
+          key: userId,
         },
       },
     });
@@ -122,7 +124,7 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
     // 2. Lắng nghe trạng thái đang soạn tin (Typing Indicator)
     channel.on("broadcast", { event: "typing" }, (event) => {
       const payload = event.payload as { userId?: string; userName?: string };
-      if (payload && payload.userId && payload.userId !== user.id) {
+      if (payload && payload.userId && payload.userId !== userId) {
         const uId = payload.userId;
         const uName = payload.userName || "Ai đó";
         setTypingUsers((prev) => ({ ...prev, [uId]: uName }));
@@ -155,8 +157,8 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
           await channel.track({
-            id: user.id,
-            name: user.name,
+            id: userId,
+            name: userName || "Thành viên",
           });
         }
       });
@@ -191,7 +193,7 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
       supabase.removeChannel(channel);
       clearInterval(pollInterval);
     };
-  }, [user, teamId]);
+  }, [userId, userName, teamId]);
 
   // Xử lý gửi tín hiệu typing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -245,18 +247,20 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
     const content = inputText.trim();
     if ((!content && !attachment) || sending || !user) return;
 
+    const pendingAttachment = attachment;
+    const expectedUserId = user.id;
     const tempId = `temp-${Date.now()}`;
     const optimisticMsg: ChatMessage = {
       id: tempId,
       content,
       teamId,
-      senderId: user.id,
+      senderId: expectedUserId,
       createdAt: new Date().toISOString(),
-      attachmentUrl: attachment?.url || null,
-      attachmentName: attachment?.name || null,
-      attachmentType: attachment?.type || null,
+      attachmentUrl: pendingAttachment?.url || null,
+      attachmentName: pendingAttachment?.name || null,
+      attachmentType: pendingAttachment?.type || null,
       sender: {
-        id: user.id,
+        id: expectedUserId,
         name: user.name,
         email: user.email,
       },
@@ -275,14 +279,40 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content,
+          expectedUserId,
           attachmentUrl: optimisticMsg.attachmentUrl,
           attachmentName: optimisticMsg.attachmentName,
           attachmentType: optimisticMsg.attachmentType,
         }),
       });
 
+      if (res.status === 409) {
+        // Phiên cookie đã đổi ở tab/browser khác: server chưa tạo tin nhắn.
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        setInputText(content);
+        setAttachment(pendingAttachment);
+        const freshUser = await refreshUser();
+        alert(
+          `Phiên đăng nhập hiện tại là ${freshUser?.email || "một tài khoản khác"}. Tin nhắn chưa được gửi, vui lòng kiểm tra tài khoản trước khi gửi lại.`
+        );
+        return;
+      }
+
       if (res.ok) {
         const newMsg: ChatMessage = await res.json();
+
+        if (newMsg.senderId !== expectedUserId) {
+          // Bảo vệ thêm: không hiển thị tin nhắn nếu server trả về người gửi khác.
+          setMessages((prev) => prev.filter((m) => m.id !== tempId));
+          setInputText(content);
+          setAttachment(pendingAttachment);
+          const freshUser = await refreshUser();
+          alert(
+            `Tin nhắn không được gửi đúng tài khoản (${freshUser?.email || "phiên đã thay đổi"}). Vui lòng thử lại.`
+          );
+          return;
+        }
+
         // Server đã broadcast realtime. Thay thế tin nhắn tạm và tránh trùng lặp
         // nếu broadcast về trước khi API trả kết quả.
         setMessages((prev) => {
@@ -294,13 +324,15 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
         // Revert nếu lỗi
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         setInputText(content);
-        const errData = await res.json();
+        setAttachment(pendingAttachment);
+        const errData = await res.json().catch(() => ({}));
         alert(errData.error || "Không thể gửi tin nhắn.");
       }
     } catch (error) {
       console.error("Lỗi gửi tin nhắn:", error);
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setInputText(content);
+      setAttachment(pendingAttachment);
     } finally {
       setSending(false);
     }
@@ -337,6 +369,12 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
             </div>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
               Trao đổi và tương tác thời gian thực giữa các thành viên
+            </p>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Đang chat với tư cách:{" "}
+              <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                {user ? `${user.name} (${user.email})` : "Chưa đăng nhập"}
+              </span>
             </p>
           </div>
         </div>

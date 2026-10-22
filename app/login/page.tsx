@@ -35,7 +35,7 @@ function LoginFormContent() {
         throw new Error(data.error || "Đăng nhập không thành công.");
       }
 
-      await refreshUser();
+      await refreshUser(true);
       router.push(from);
       router.refresh();
     } catch (err: unknown) {

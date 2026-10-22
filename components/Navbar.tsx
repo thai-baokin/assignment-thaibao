@@ -102,7 +102,7 @@ export default function Navbar() {
                         }}
                         className="flex items-center w-full px-3 py-2 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer mt-1 font-medium text-left"
                       >
-                        <span>Đăng xuất</span>
+                        <span>Đăng xuất / Đổi tài khoản</span>
                       </button>
                     </div>
                   )}
@@ -184,7 +184,7 @@ export default function Navbar() {
                 }}
                 className="w-full text-left px-3 py-2 rounded-lg text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
               >
-                <span>Đăng xuất</span>
+                <span>Đăng xuất / Đổi tài khoản</span>
               </button>
             ) : (
               <div className="grid grid-cols-2 gap-2 mt-2">

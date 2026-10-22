@@ -1,7 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 export interface UserSession {
   id: string;
@@ -21,53 +28,124 @@ interface AuthContextType {
   user: UserSession | null;
   loading: boolean;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
+  refreshUser: (broadcast?: boolean) => Promise<UserSession | null>;
 }
+
+const AUTH_CHANNEL_NAME = "taskpulse-auth";
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   logout: async () => {},
-  refreshUser: async () => {},
+  refreshUser: async () => null,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+  const userRef = useRef<UserSession | null>(null);
+  const channelRef = useRef<BroadcastChannel | null>(null);
+  const lastFocusRefreshRef = useRef(0);
 
-  const fetchCurrentUser = useCallback(async () => {
-    try {
-      const res = await fetch("/api/auth/me");
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user || null);
-      } else {
-        setUser(null);
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  const fetchCurrentUser = useCallback(
+    async (silent = false): Promise<UserSession | null> => {
+      try {
+        const res = await fetch("/api/auth/me", {
+          cache: "no-store",
+          credentials: "same-origin",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const nextUser: UserSession | null = data.user || null;
+          setUser(nextUser);
+          return nextUser;
+        }
+        if (!silent) setUser(null);
+        return silent ? userRef.current : null;
+      } catch {
+        if (!silent) setUser(null);
+        return silent ? userRef.current : null;
+      } finally {
+        if (!silent) setLoading(false);
       }
-    } catch {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
+    },
+    []
+  );
+
+  const broadcastAuthChange = useCallback(() => {
+    channelRef.current?.postMessage({ type: "auth-changed" });
   }, []);
 
   useEffect(() => {
     fetchCurrentUser();
   }, [fetchCurrentUser]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const channel =
+      "BroadcastChannel" in window
+        ? new BroadcastChannel(AUTH_CHANNEL_NAME)
+        : null;
+    channelRef.current = channel;
+
+    if (channel) {
+      channel.onmessage = async () => {
+        const nextUser = await fetchCurrentUser(true);
+        if (!nextUser && pathnameRef.current.startsWith("/teams")) {
+          router.push("/login");
+        }
+      };
+    }
+
+    const refreshOnFocus = () => {
+      const now = Date.now();
+      if (now - lastFocusRefreshRef.current < 1000) return;
+      lastFocusRefreshRef.current = now;
+      fetchCurrentUser(true);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") refreshOnFocus();
+    };
+
+    window.addEventListener("focus", refreshOnFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", refreshOnFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      channel?.close();
+      channelRef.current = null;
+    };
+  }, [fetchCurrentUser, router]);
+
   const logout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch("/api/auth/logout", { method: "POST", cache: "no-store" });
     } finally {
       setUser(null);
+      broadcastAuthChange();
       router.push("/login");
       router.refresh();
     }
   };
 
-  const refreshUser = async () => {
-    await fetchCurrentUser();
+  const refreshUser = async (broadcast = false) => {
+    const nextUser = await fetchCurrentUser();
+    if (broadcast) broadcastAuthChange();
+    return nextUser;
   };
 
   return (

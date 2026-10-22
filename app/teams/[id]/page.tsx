@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, use } from "react";
+import { useEffect, useState, useCallback, useRef, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
@@ -106,6 +106,7 @@ export default function TeamDetailPage({
   const teamId = resolvedParams.id;
   const router = useRouter();
   const { user } = useAuth();
+  const previousUserIdRef = useRef<string | null>(null);
 
   const [team, setTeam] = useState<TeamDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -195,6 +196,18 @@ export default function TeamDetailPage({
       setActivityLoading(false);
     }
   }, [teamId]);
+
+  useEffect(() => {
+    if (
+      previousUserIdRef.current &&
+      user?.id &&
+      previousUserIdRef.current !== user.id
+    ) {
+      fetchTeamData(true);
+      fetchActivity();
+    }
+    previousUserIdRef.current = user?.id ?? null;
+  }, [user?.id, fetchTeamData, fetchActivity]);
 
 
   // Xác định vai trò của người dùng hiện tại (Owner, Admin, Member)

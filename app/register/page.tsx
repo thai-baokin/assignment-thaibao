@@ -45,7 +45,7 @@ export default function RegisterPage() {
         throw new Error(data.error || "Đăng ký không thành công.");
       }
 
-      await refreshUser();
+      await refreshUser(true);
       router.push("/teams");
       router.refresh();
     } catch (err: unknown) {
