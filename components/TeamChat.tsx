@@ -11,11 +11,11 @@ export interface ChatMessage {
   teamId: string;
   senderId: string;
   createdAt: string;
-  sender: {
+  sender?: {
     id: string;
-    name: string;
-    email: string;
-  };
+    name?: string;
+    email?: string;
+  } | null;
 }
 
 interface TeamChatProps {
@@ -47,8 +47,10 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
       const res = await fetch(`/api/teams/${teamId}/messages`);
       if (res.ok) {
         const data = await res.json();
-        setMessages(data);
-        setTimeout(() => scrollToBottom("auto"), 100);
+        if (Array.isArray(data)) {
+          setMessages(data);
+          setTimeout(() => scrollToBottom("auto"), 100);
+        }
       }
     } catch (error) {
       console.error("Lỗi khi tải tin nhắn:", error);
@@ -77,10 +79,18 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
     // 1. Lắng nghe tin nhắn mới qua Broadcast
     channel.on("broadcast", { event: "new-message" }, (event) => {
       const newMsg = event.payload as ChatMessage;
-      if (newMsg && newMsg.teamId === teamId) {
+      if (newMsg && newMsg.teamId === teamId && newMsg.id) {
+        const safeMsg: ChatMessage = {
+          ...newMsg,
+          sender: newMsg.sender || {
+            id: newMsg.senderId,
+            name: "Thành viên",
+            email: "",
+          },
+        };
         setMessages((prev) => {
-          if (prev.some((m) => m.id === newMsg.id)) return prev;
-          return [...prev, newMsg];
+          if (prev.some((m) => m.id === safeMsg.id)) return prev;
+          return [...prev, safeMsg];
         });
         setTimeout(() => scrollToBottom("smooth"), 80);
       }
@@ -88,15 +98,17 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
 
     // 2. Lắng nghe trạng thái đang soạn tin (Typing Indicator)
     channel.on("broadcast", { event: "typing" }, (event) => {
-      const { userId, userName } = event.payload as { userId: string; userName: string };
-      if (userId && userId !== user.id) {
-        setTypingUsers((prev) => ({ ...prev, [userId]: userName }));
+      const payload = event.payload as { userId?: string; userName?: string };
+      if (payload && payload.userId && payload.userId !== user.id) {
+        const uId = payload.userId;
+        const uName = payload.userName || "Ai đó";
+        setTypingUsers((prev) => ({ ...prev, [uId]: uName }));
 
         // Tự động xóa sau 3.5s nếu không gõ tiếp
         setTimeout(() => {
           setTypingUsers((prev) => {
             const next = { ...prev };
-            delete next[userId];
+            delete next[uId];
             return next;
           });
         }, 3500);
@@ -110,8 +122,8 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
         const uniqueOnline: { id: string; name: string }[] = [];
         Object.values(state).forEach((presences) => {
           presences.forEach((p) => {
-            if (p && !uniqueOnline.some((u) => u.id === p.id)) {
-              uniqueOnline.push({ id: p.id, name: p.name });
+            if (p && p.id && !uniqueOnline.some((u) => u.id === p.id)) {
+              uniqueOnline.push({ id: p.id, name: p.name || "Thành viên" });
             }
           });
         });
@@ -134,14 +146,16 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
       try {
         const res = await fetch(`/api/teams/${teamId}/messages`);
         if (res.ok) {
-          const data: ChatMessage[] = await res.json();
-          setMessages((prev) => {
-            if (data.length !== prev.length) {
-              setTimeout(() => scrollToBottom("smooth"), 50);
-              return data;
-            }
-            return prev;
-          });
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setMessages((prev) => {
+              if (data.length !== prev.length) {
+                setTimeout(() => scrollToBottom("smooth"), 50);
+                return data;
+              }
+              return prev;
+            });
+          }
         }
       } catch {
         // bỏ qua
@@ -284,7 +298,7 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
             <span>
               {onlineUsers.length} đang online:{" "}
               <span className="text-zinc-900 dark:text-white font-bold">
-                {onlineUsers.map((u) => (u.id === user?.id ? "Bạn" : u.name)).join(", ")}
+                {onlineUsers.map((u) => (u?.id === user?.id ? "Bạn" : (u?.name || "Thành viên"))).join(", ")}
               </span>
             </span>
           </div>
@@ -312,7 +326,9 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
           messages.map((msg) => {
             const isMe = msg.senderId === user?.id;
             const isMsgOwner = msg.senderId === ownerId;
-            const isMsgAdmin = adminIds.includes(msg.senderId);
+            const isMsgAdmin = (adminIds || []).includes(msg.senderId);
+            const senderDisplayName = msg.sender?.name || (isMe ? (user?.name || "Bạn") : "Thành viên");
+            const senderInitial = (senderDisplayName || "U").charAt(0).toUpperCase();
 
             return (
               <div
@@ -329,14 +345,14 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
                       : "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
                   }`}
                 >
-                  {msg.sender.name.charAt(0)}
+                  {senderInitial}
                 </div>
 
                 {/* Message Bubble */}
                 <div className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                   <div className="flex items-center gap-1.5 mb-1 px-1">
                     <span className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300">
-                      {isMe ? "Bạn" : msg.sender.name}
+                      {isMe ? "Bạn" : senderDisplayName}
                     </span>
                     {isMsgOwner && (
                       <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">

@@ -624,11 +624,11 @@ export default function TeamDetailPage({
             {team.description || "Chưa có mô tả cho nhóm."}
           </p>
           <div className="mt-3 flex items-center gap-3 text-xs text-zinc-400">
-            <span>Tạo bởi: <strong className="text-zinc-700 dark:text-zinc-300">{team.owner.name}</strong></span>
+            <span>Tạo bởi: <strong className="text-zinc-700 dark:text-zinc-300">{team.owner?.name || "Trưởng nhóm"}</strong></span>
             <span>•</span>
-            <span>{team.members.length} thành viên</span>
+            <span>{(team.members || []).length} thành viên</span>
             <span>•</span>
-            <span>{team.tasks.length} công việc</span>
+            <span>{(team.tasks || []).length} công việc</span>
           </div>
         </div>
 
@@ -655,7 +655,7 @@ export default function TeamDetailPage({
             }`}
           >
             <CheckSquare className="h-4 w-4" />
-            <span>Công việc ({team.tasks.length})</span>
+            <span>Công việc ({(team.tasks || []).length})</span>
           </button>
 
           <button
@@ -667,7 +667,7 @@ export default function TeamDetailPage({
             }`}
           >
             <Users className="h-4 w-4" />
-            <span>Thành viên ({team.members.length})</span>
+            <span>Thành viên ({(team.members || []).length})</span>
           </button>
 
           <button
@@ -765,9 +765,9 @@ export default function TeamDetailPage({
               <option value="ALL">Tất cả thành viên</option>
               <option value="ME">Công việc của tôi</option>
               <option value="UNASSIGNED">Chưa phân công</option>
-              {team.members.map((m) => (
+              {(team.members || []).map((m) => (
                 <option key={m.userId} value={m.userId}>
-                  {m.user.name} ({m.role === "OWNER" ? "Trưởng nhóm" : "Thành viên"})
+                  {m.user?.name || "Thành viên"} ({m.role === "OWNER" ? "Trưởng nhóm" : "Thành viên"})
                 </option>
               ))}
             </select>
@@ -885,10 +885,10 @@ export default function TeamDetailPage({
                               <div className="flex items-center justify-between text-[11px] text-zinc-500">
                                 <div className="flex items-center gap-1.5" title={`Phụ trách: ${task.assignee?.name || "Chưa phân công"}`}>
                                   <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black font-bold text-[10px]">
-                                    {task.assignee ? task.assignee.name.charAt(0) : "?"}
+                                    {task.assignee ? (task.assignee.name || "?").charAt(0).toUpperCase() : "?"}
                                   </div>
                                   <span className="truncate max-w-[90px] font-medium">
-                                    {task.assignee ? task.assignee.name : "Chưa gán"}
+                                    {task.assignee?.name || "Chưa gán"}
                                   </span>
                                 </div>
 
@@ -1007,9 +1007,9 @@ export default function TeamDetailPage({
                             {task.assignee ? (
                               <div className="flex items-center gap-1.5">
                                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black font-bold text-[10px]">
-                                  {task.assignee.name.charAt(0)}
+                                  {(task.assignee.name || "?").charAt(0).toUpperCase()}
                                 </div>
-                                <span className="font-medium">{task.assignee.name}</span>
+                                <span className="font-medium">{task.assignee.name || "Chưa gán"}</span>
                               </div>
                             ) : (
                               <span className="text-zinc-400 italic">Chưa gán</span>
@@ -1074,10 +1074,13 @@ export default function TeamDetailPage({
 
           <div className="card-3d rounded-2xl overflow-hidden shadow-2xs">
             <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {team.members.map((m) => {
+              {(team.members || []).map((m) => {
                 const isMemberOwner = m.role === "OWNER" || m.userId === team.ownerId;
                 const isMemberAdmin = !isMemberOwner && m.role === "ADMIN";
                 const isCurrent = m.userId === user?.id;
+                const memberName = m.user?.name || "Thành viên";
+                const memberEmail = m.user?.email || "";
+                const memberInitial = (memberName || "M").charAt(0).toUpperCase();
 
                 // Quyền xóa thành viên:
                 // - Owner: xóa bất kỳ ai trừ chính mình
@@ -1090,18 +1093,18 @@ export default function TeamDetailPage({
                   <div key={m.id} className="p-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-white dark:bg-white dark:text-black font-bold text-sm uppercase shadow-2xs">
-                        {m.user.name.charAt(0)}
+                        {memberInitial}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-bold text-black dark:text-white">{m.user.name}</p>
+                          <p className="text-sm font-bold text-black dark:text-white">{memberName}</p>
                           {isCurrent && (
                             <span className="text-[10px] font-semibold bg-zinc-200 text-black dark:bg-zinc-800 dark:text-white px-1.5 py-0.5 rounded">
                               Bạn
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-zinc-500">{m.user.email}</p>
+                        <p className="text-xs text-zinc-500">{memberEmail}</p>
                       </div>
                     </div>
 
@@ -1139,7 +1142,7 @@ export default function TeamDetailPage({
                       {/* Remove Member button */}
                       {canRemoveThisUser && (
                         <button
-                          onClick={() => handleRemoveMember(m.userId, m.user.name)}
+                          onClick={() => handleRemoveMember(m.userId, memberName)}
                           className="px-2.5 py-1 rounded-lg text-xs font-semibold text-zinc-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                         >
                           Xóa
@@ -1273,9 +1276,9 @@ export default function TeamDetailPage({
                     className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-2.5 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                   >
                     <option value="">-- Chưa phân công --</option>
-                    {team.members.map((m) => (
+                    {(team.members || []).map((m) => (
                       <option key={m.userId} value={m.userId}>
-                        {m.user.name} ({m.role === "OWNER" ? "Trưởng nhóm" : "Thành viên"})
+                        {m.user?.name || "Thành viên"} ({m.role === "OWNER" ? "Trưởng nhóm" : "Thành viên"})
                       </option>
                     ))}
                   </select>
