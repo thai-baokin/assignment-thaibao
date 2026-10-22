@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { getUserTeamRole, canAddMembers } from "@/lib/permissions";
+import { createInAppNotification } from "@/lib/notifications";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// POST /api/teams/:id/members - Thêm thành viên vào nhóm bằng email (Chỉ Owner)
+// POST /api/teams/:id/members - Thêm thành viên vào nhóm bằng email (Owner hoặc Admin)
 export async function POST(request: Request, { params }: RouteParams) {
   try {
     const session = await getCurrentUser();
@@ -25,10 +27,11 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "Không tìm thấy nhóm." }, { status: 404 });
     }
 
-    // Chỉ Owner mới được quyền thêm thành viên
-    if (team.ownerId !== session.userId) {
+    // Lấy vai trò của người gọi API
+    const actorRole = await getUserTeamRole(session.userId, teamId);
+    if (!canAddMembers(actorRole)) {
       return NextResponse.json(
-        { error: "Chỉ Trưởng nhóm (Owner) mới có quyền thêm thành viên." },
+        { error: "Chỉ Trưởng nhóm (Owner) hoặc Quản trị viên (Admin) mới có quyền thêm thành viên." },
         { status: 403 }
       );
     }
@@ -52,7 +55,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     // Kiểm tra xem user này đã thuộc nhóm chưa
-    const isAlreadyMember = team.members.some((m) => m.userId === targetUser.id);
+    const isAlreadyMember = team.members.some((m) => m.userId === targetUser.id) || team.ownerId === targetUser.id;
     if (isAlreadyMember) {
       return NextResponse.json(
         { error: "Người dùng này đã là thành viên trong nhóm." },
@@ -60,15 +63,30 @@ export async function POST(request: Request, { params }: RouteParams) {
       );
     }
 
+    // Xác định role: Chỉ Owner mới có quyền chỉ định role ADMIN khi mời
+    let assignedRole = "MEMBER";
+    if (role.toUpperCase() === "ADMIN" && actorRole === "OWNER") {
+      assignedRole = "ADMIN";
+    }
+
     const newMember = await prisma.teamMember.create({
       data: {
         teamId,
         userId: targetUser.id,
-        role: role.toUpperCase() === "OWNER" ? "OWNER" : "MEMBER",
+        role: assignedRole,
       },
       include: {
         user: { select: { id: true, name: true, email: true } },
       },
+    });
+
+    // Tạo thông báo in-app cho người dùng được mời vào nhóm
+    await createInAppNotification({
+      userId: targetUser.id,
+      type: "ADDED_TO_TEAM",
+      title: "Tham gia nhóm mới",
+      message: `Bạn đã được thêm vào nhóm "${team.name}" với vai trò ${assignedRole === "ADMIN" ? "Quản trị viên (Admin)" : "Thành viên (Member)"}.`,
+      relatedId: teamId,
     });
 
     return NextResponse.json(newMember, { status: 201 });
@@ -77,3 +95,4 @@ export async function POST(request: Request, { params }: RouteParams) {
     return NextResponse.json({ error: "Lỗi máy chủ khi thêm thành viên." }, { status: 500 });
   }
 }
+

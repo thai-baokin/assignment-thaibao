@@ -20,6 +20,8 @@ model User {
   memberships    TeamMember[]
   assignedTasks  Task[]       @relation("TaskAssignee")
   createdTasks   Task[]       @relation("TaskCreator")
+  messages       Message[]
+  notifications  Notification[]
 }
 
 model Team {
@@ -31,8 +33,9 @@ model Team {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  members TeamMember[]
-  tasks   Task[]
+  members  TeamMember[]
+  tasks    Task[]
+  messages Message[]
 }
 
 model TeamMember {
@@ -41,7 +44,7 @@ model TeamMember {
   team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   userId   String
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role     String   @default("MEMBER")
+  role     String   @default("MEMBER") // OWNER, ADMIN, MEMBER
   joinedAt DateTime @default(now())
 
   @@unique([teamId, userId])
@@ -62,4 +65,26 @@ model Task {
   assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // ASSIGNED_TASK, ADDED_TO_TEAM
+  title     String
+  message   String
+  relatedId String?  // taskId or teamId
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

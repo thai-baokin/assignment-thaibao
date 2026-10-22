@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { getUserTeamRole, canEditTeam, canDeleteTeam } from "@/lib/permissions";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -58,7 +59,7 @@ export async function GET(request: Request, { params }: RouteParams) {
   }
 }
 
-// PUT /api/teams/:id - Cập nhật thông tin team (Chỉ Owner)
+// PUT /api/teams/:id - Cập nhật thông tin team (Owner hoặc Admin)
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
     const session = await getCurrentUser();
@@ -76,9 +77,10 @@ export async function PUT(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "Không tìm thấy nhóm." }, { status: 404 });
     }
 
-    if (team.ownerId !== session.userId) {
+    const userRole = await getUserTeamRole(session.userId, teamId);
+    if (!canEditTeam(userRole)) {
       return NextResponse.json(
-        { error: "Chỉ Trưởng nhóm (Owner) mới có quyền cập nhật thông tin nhóm." },
+        { error: "Chỉ Trưởng nhóm (Owner) hoặc Quản trị viên (Admin) mới có quyền cập nhật thông tin nhóm." },
         { status: 403 }
       );
     }
@@ -113,7 +115,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
   }
 }
 
-// DELETE /api/teams/:id - Xóa team (Chỉ Owner)
+// DELETE /api/teams/:id - Xóa team (Chỉ duy nhất Owner)
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     const session = await getCurrentUser();
@@ -131,9 +133,10 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "Không tìm thấy nhóm." }, { status: 404 });
     }
 
-    if (team.ownerId !== session.userId) {
+    const userRole = await getUserTeamRole(session.userId, teamId);
+    if (!canDeleteTeam(userRole)) {
       return NextResponse.json(
-        { error: "Chỉ Trưởng nhóm (Owner) mới có quyền xóa nhóm." },
+        { error: "Chỉ duy nhất Trưởng nhóm (Owner) mới có quyền giải tán và xóa nhóm." },
         { status: 403 }
       );
     }
@@ -148,3 +151,4 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     return NextResponse.json({ error: "Lỗi máy chủ khi xóa nhóm." }, { status: 500 });
   }
 }
+

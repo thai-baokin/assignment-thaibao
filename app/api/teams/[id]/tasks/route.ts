@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { createInAppNotification } from "@/lib/notifications";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -123,9 +124,21 @@ export async function POST(request: Request, { params }: RouteParams) {
       },
     });
 
+    // Nếu task được gán cho người khác (khác session.userId), tạo thông báo ASSIGNED_TASK
+    if (assigneeId && assigneeId !== session.userId) {
+      await createInAppNotification({
+        userId: assigneeId,
+        type: "ASSIGNED_TASK",
+        title: "Bạn có công việc mới",
+        message: `${session.name} đã phân công công việc "${task.title}" cho bạn trong nhóm "${team.name}".`,
+        relatedId: task.id,
+      });
+    }
+
     return NextResponse.json(task, { status: 201 });
   } catch (error) {
     console.error("Lỗi khi tạo task:", error);
     return NextResponse.json({ error: "Lỗi máy chủ khi tạo task." }, { status: 500 });
   }
 }
+

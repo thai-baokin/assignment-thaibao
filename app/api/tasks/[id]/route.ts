@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { getUserTeamRole, canDeleteTask, canManageTask } from "@/lib/permissions";
+import { createInAppNotification } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -33,18 +35,27 @@ export async function PUT(request: Request, { params }: RouteParams) {
       );
     }
 
-    // Nếu task thuộc về một Team, bắt buộc phải đăng nhập và là thành viên hoặc Owner của team đó
+    // Nếu task thuộc về một Team
     if (existingTask.team) {
       if (!session) {
         return NextResponse.json({ error: "Vui lòng đăng nhập để cập nhật task." }, { status: 401 });
       }
 
-      const isMember = existingTask.team.members.some((m) => m.userId === session.userId);
-      const isOwner = existingTask.team.ownerId === session.userId;
-
-      if (!isMember && !isOwner) {
+      const teamRole = await getUserTeamRole(session.userId, existingTask.team.id);
+      if (!teamRole) {
         return NextResponse.json(
-          { error: "Bạn không có quyền chỉnh sửa công việc trong nhóm này." },
+          { error: "Bạn không phải thành viên của nhóm này." },
+          { status: 403 }
+        );
+      }
+
+      const isCreator = existingTask.creatorId === session.userId;
+      const isAssignee = existingTask.assigneeId === session.userId;
+
+      // Kiểm tra quyền chỉnh sửa theo RBAC (Owner/Admin sửa mọi task; Member sửa task của mình)
+      if (!canManageTask(teamRole, isCreator, isAssignee)) {
+        return NextResponse.json(
+          { error: "Thành viên chỉ có quyền chỉnh sửa công việc do mình tạo hoặc được phân công." },
           { status: 403 }
         );
       }
@@ -71,7 +82,6 @@ export async function PUT(request: Request, { params }: RouteParams) {
       }
     }
 
-
     const updatedTask = await prisma.task.update({
       where: { id },
       data: {
@@ -92,6 +102,23 @@ export async function PUT(request: Request, { params }: RouteParams) {
       },
     });
 
+    // Nếu thay đổi người được phân công sang người mới khác người sửa, gửi notification
+    if (
+      assigneeId &&
+      assigneeId !== existingTask.assigneeId &&
+      session &&
+      assigneeId !== session.userId &&
+      existingTask.team
+    ) {
+      await createInAppNotification({
+        userId: assigneeId,
+        type: "ASSIGNED_TASK",
+        title: "Bạn được phân công công việc mới",
+        message: `${session.name} đã phân công công việc "${updatedTask.title}" cho bạn trong nhóm "${existingTask.team.name}".`,
+        relatedId: updatedTask.id,
+      });
+    }
+
     return NextResponse.json(updatedTask, { status: 200 });
   } catch (error) {
     console.error("Lỗi khi cập nhật task:", error);
@@ -103,7 +130,9 @@ export async function PUT(request: Request, { params }: RouteParams) {
 }
 
 // DELETE /api/tasks/[id] - Xóa task theo ID
-// Yêu cầu: "Only the task creator, the assignee, or the team Owner can delete a task."
+// Yêu cầu Assignment 3 & 4:
+// - Owner & Admin: Có quyền xóa bất kỳ task nào trong nhóm
+// - Member: Chỉ có quyền xóa task do mình tạo hoặc được phân công
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     const session = await getCurrentUser();
@@ -123,19 +152,29 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       );
     }
 
-    // Nếu task gắn với team, kiểm tra quyền: Chỉ creator, assignee hoặc team Owner mới được xóa
+    // Nếu task gắn với team, kiểm tra quyền RBAC
     if (existingTask.teamId && existingTask.team) {
       if (!session) {
         return NextResponse.json({ error: "Vui lòng đăng nhập để xóa task." }, { status: 401 });
       }
 
+      const teamRole = await getUserTeamRole(session.userId, existingTask.team.id);
+      if (!teamRole) {
+        return NextResponse.json(
+          { error: "Bạn không có quyền truy cập nhóm này." },
+          { status: 403 }
+        );
+      }
+
       const isCreator = existingTask.creatorId === session.userId;
       const isAssignee = existingTask.assigneeId === session.userId;
-      const isOwner = existingTask.team.ownerId === session.userId;
 
-      if (!isCreator && !isAssignee && !isOwner) {
+      if (!canDeleteTask(teamRole, isCreator, isAssignee)) {
         return NextResponse.json(
-          { error: "Bạn không có quyền xóa công việc này. Chỉ người tạo, người được phân công hoặc Trưởng nhóm mới có thể xóa." },
+          {
+            error:
+              "Bạn không có quyền xóa công việc này. Chỉ Trưởng nhóm (Owner), Quản trị viên (Admin) hoặc người tạo/được phân công mới có thể xóa.",
+          },
           { status: 403 }
         );
       }
@@ -148,7 +187,6 @@ export async function DELETE(request: Request, { params }: RouteParams) {
         );
       }
     }
-
 
     await prisma.task.delete({
       where: { id },
@@ -166,3 +204,4 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     );
   }
 }
+

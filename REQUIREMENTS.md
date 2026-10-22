@@ -1,4 +1,4 @@
-# 📋 Assignment 1 – Task & Team Management App
+📋 Assignment 1 – Task & Team Management App
 
 > **Chủ đề:** Project Setup, Prisma & Deployment
 > **Mục tiêu:** Xây dựng nền tảng kỹ thuật cho ứng dụng quản lý công việc và nhóm (Task & Team Management), kết nối database Supabase qua Prisma, làm tính năng CRUD Task công khai và deploy lên Vercel.
@@ -137,10 +137,12 @@
 ## 📌 2. Bảng Đối Soát Yêu Cầu Assignment 2 (Checklist)
 
 ### 1. Kế thừa & Cấu trúc dự án
+
 - [X] Tiếp tục phát triển trên cùng GitHub repository và Vercel project của Assignment 1 (không tạo project mới từ đầu).
 - [X] Giữ nguyên tính tương thích với trang chủ (`/`) và các model dữ liệu đã tạo ở Assignment 1.
 
 ### 2. Xác thực người dùng (Authentication)
+
 - [X] **Đăng ký tài khoản (`/register`):** Hỗ trợ nhập Họ tên, Email, Mật khẩu (validate >= 6 ký tự, email hợp lệ).
 - [X] **Đăng nhập (`/login`):** Xác thực mật khẩu đã hash với `bcryptjs`, cấp JWT token và lưu vào HttpOnly cookie an toàn.
 - [X] **Đăng xuất (`POST /api/auth/logout`):** Nút đăng xuất tại Navbar và Dropdown profile, tự động dọn dẹp cookie phiên.
@@ -151,6 +153,7 @@
   - Có nút **"Điền nhanh"** 1 chạm trên trang Login.
 
 ### 3. Quản lý Nhóm (Team Model & Management)
+
 - [X] Model `Team` đầy đủ các trường: `name` (bắt buộc), `description` (tùy chọn), quan hệ `owner` (`ownerId`), quan hệ `members` (`TeamMember[]`), `tasks` (`Task[]`).
 - [X] Khi tạo nhóm mới (`POST /api/teams`), người tạo tự động trở thành **Owner** của nhóm.
 - [X] Owner có quyền mời thành viên vào nhóm bằng email (`POST /api/teams/:id/members`).
@@ -159,6 +162,7 @@
 - [X] Một người dùng có thể tham gia nhiều nhóm khác nhau và chuyển đổi dễ dàng trên trang Dashboard nhóm (`/teams`).
 
 ### 4. Quản lý Công việc trong Nhóm (Task Model & Management)
+
 - [X] Model `Task` đầy đủ các trường: `title`, `description`, `status` (`TODO`, `IN_PROGRESS`, `DONE`), `priority` (`LOW`, `MEDIUM`, `HIGH`), `dueDate`, `teamId`, `creatorId`, `assigneeId`.
 - [X] Bất kỳ thành viên nào trong nhóm cũng có quyền tạo task mới trong nhóm đó (`POST /api/teams/:id/tasks`).
 - [X] Task có thể được phân công cho một thành viên cụ thể trong nhóm (assignee).
@@ -166,6 +170,7 @@
 - [X] **Phân quyền xóa task (RBAC):** Chỉ người tạo task (Creator), người được phân công (Assignee), hoặc Trưởng nhóm (Owner) mới có quyền xóa task (`DELETE /api/tasks/:id`).
 
 ### 5. Danh sách 13 API Endpoints (CRUD)
+
 - [X] `POST /api/auth/register` – Đăng ký người dùng mới
 - [X] `POST /api/auth/login` – Đăng nhập và nhận session/token
 - [X] `GET /api/teams` – Lấy danh sách nhóm người dùng hiện tại tham gia
@@ -183,6 +188,7 @@
 - [X] *Bổ sung:* `GET /api/auth/me` – Lấy thông tin phiên đăng nhập hiện tại
 
 ### 6. Giao diện người dùng (UI)
+
 - [X] Form Đăng ký, Form Đăng nhập và nút Đăng xuất.
 - [X] Trang Dashboard liệt kê tất cả nhóm mà người dùng tham gia (`/teams`).
 - [X] Modal "Tạo Nhóm Mới" và Tab quản lý thành viên nhóm.
@@ -192,20 +198,102 @@
 - [X] Thanh Navigation menu phản ánh trạng thái người dùng đăng nhập và số lượng nhóm.
 
 ### 7. Tính năng điểm cộng (Bonus Features)
+
 - [X] **Bảng Kanban tương tác:** Hiển thị 3 cột công việc (To Do, In Progress, Done) với các nút chuyển nhanh trạng thái 1-chạm (`← To Do`, `In Progress`, `Done ✓`).
 - [X] **Bộ lọc & Tìm kiếm đa tiêu chí:** Tìm kiếm từ khóa theo thời gian thực kết hợp lọc theo Status, Priority và Assignee ("Công việc của tôi", "Chưa phân công", hoặc từng thành viên cụ thể).
 - [X] **Mời thành viên theo email:** Modal mời thành viên trực tiếp theo email đã đăng ký.
 
 ---
 
-## 📄 3. Submission Information (Dành cho nộp bài)
+## 📌 3. Bảng Đối Soát Yêu Cầu Assignment 3 & 4 (Checklist Hoàn Thành)
+
+### 1. Trò chuyện nhóm thời gian thực (Real-time Team Chat)
+- [X] Mỗi nhóm có riêng một phòng chat (`Phòng trò chuyện nhóm`).
+- [X] Thành viên trong nhóm có thể gửi và xem tin nhắn văn bản tức thì.
+- [X] Tin nhắn được lưu trữ đầy đủ trong CSDL thông qua model `Message` (`senderId`, `content`, `teamId`, `createdAt`).
+- [X] Tin nhắn mới xuất hiện theo thời gian thực (không cần reload/F5) cho mọi thành viên đang online thông qua **Supabase Realtime Broadcast**.
+- [X] Giao diện Chat Panel hiện đại tích hợp ngay trong trang chi tiết nhóm:
+  - Lịch sử tin nhắn cuộn tự động (auto-scroll to bottom).
+  - Bong bóng tin nhắn phân biệt của "Tôi" (căn phải) và các thành viên khác (căn trái kèm Avatar và thời gian).
+  - Ô nhập liệu tin nhắn hỗ trợ gõ nhanh bằng phím Enter.
+- [X] **Tính năng điểm cộng (Bonus Features):**
+  - **Typing Indicator:** Hiển thị thời gian thực `● ● ● [Tên] đang soạn tin nhắn...` khi có thành viên đang gõ.
+  - **Online Presence:** Hiển thị số lượng và danh sách thành viên đang online trong phòng chat.
+
+### 2. Cập nhật Bảng công việc thời gian thực (Real-time Task Board Updates)
+- [X] Khi một thành viên tạo công việc mới (`POST /api/teams/:id/tasks`), task mới xuất hiện ngay trên bảng Kanban của các thành viên khác.
+- [X] Khi một thành viên chuyển trạng thái (Cần làm -> Đang làm -> Hoàn thành) hoặc chỉnh sửa task, sự thay đổi được phản ánh tức thì trên màn hình của tất cả thành viên khác.
+- [X] Khi xóa công việc, thẻ công việc lập tức biến mất trên mọi màn hình mà không cần refresh trang.
+- [X] Cơ chế Realtime đồng bộ trên kênh `team-room-${teamId}` của Supabase Realtime Channel.
+
+### 3. Hệ thống Thông báo (In-App Notifications)
+- [X] Người dùng nhận được thông báo in-app khi được phân công công việc mới (`ASSIGNED_TASK`).
+- [X] Người dùng nhận được thông báo in-app khi được thêm vào nhóm mới (`ADDED_TO_TEAM`).
+- [X] Thông báo được lưu trữ bền vững trong database (`Notification` model: `userId`, `type`, `title`, `message`, `relatedId`, `read`, `createdAt`).
+- [X] **Notification Bell trên Navbar:**
+  - Biểu tượng chiếc chuông thanh lịch kèm badge đỏ báo số lượng thông báo chưa đọc.
+  - Dropdown menu danh sách thông báo gần đây với icon phân loại trực quan và thời gian tương đối.
+  - Nút "Đã đọc tất cả" và click vào từng thông báo để đánh dấu đã đọc (`PUT /api/notifications/:id`).
+  - Tự động chuyển hướng đến nhóm hoặc công việc liên quan khi bấm vào thông báo.
+  - Thông báo xuất hiện theo thời gian thực (Realtime notification channel `notifications:user-${userId}`) kèm hiệu ứng âm thanh nhẹ Web Audio API.
+
+### 4. Hệ thống Phân quyền nâng cao (Advanced Role & Permission System - 3 Roles)
+- [X] Hệ thống phân quyền 3 cấp độ:
+  - 👑 **Owner (Trưởng nhóm):** Toàn quyền kiểm soát — quản lý thành viên, thay đổi vai trò (thăng Admin/hạ Member), xóa nhóm, xóa bất kỳ task nào.
+  - 🛡️ **Admin (Quản trị viên):** Quản lý thành viên (mời thành viên, xóa thành viên thường), quản lý tất cả task (tạo, sửa, xóa bất kỳ task nào trong nhóm), nhưng **không được xóa nhóm**.
+  - 👤 **Member (Thành viên):** Tạo và quản lý công việc do mình tạo hoặc được phân công cho mình; xem mọi thông tin khác trong nhóm.
+- [X] **Bảo vệ chặt chẽ ở cả Server-side (API Checks) và Client-side (UI):**
+  - `DELETE /api/teams/:id`: Chỉ duy nhất Owner mới có quyền xóa nhóm (Admin/Member bị chặn 403).
+  - `PUT /api/teams/:id`: Chỉ Owner và Admin mới có quyền sửa thông tin nhóm.
+  - `POST /api/teams/:id/members`: Cả Owner và Admin đều được mời thành viên; chỉ Owner mới được chỉ định vai trò Admin khi mời.
+  - `PATCH /api/teams/:id/members/:userId`: Chỉ duy nhất Owner mới có quyền thay đổi vai trò thành viên (Admin <-> Member).
+  - `DELETE /api/teams/:id/members/:userId`: Owner xóa được bất kỳ ai trừ chính mình; Admin chỉ xóa được Member thường; Member chỉ có quyền tự rời nhóm.
+  - `DELETE /api/tasks/:id`: Owner và Admin xóa được bất kỳ task nào; Member chỉ xóa được task do mình tạo hoặc được phân công.
+  - `PUT /api/tasks/:id`: Owner và Admin sửa được mọi task; Member chỉ sửa được task do mình phụ trách/tạo ra.
+- [X] **Giao diện Quản lý Thành viên (Member Management Screen):**
+  - Hiển thị vai trò của từng thành viên với huy hiệu và icon phân biệt rõ ràng (👑 Trưởng nhóm, 🛡️ Quản trị viên, 👤 Thành viên).
+  - Hiển thị nút đổi vai trò `Thăng Admin / Hạ thành viên` độc quyền cho Trưởng nhóm.
+  - Ẩn/hiện các nút thao tác xóa theo đúng ma trận quyền hạn.
+
+### 5. Danh sách 18 API Endpoints
+- [X] `POST /api/auth/register` – Đăng ký tài khoản
+- [X] `POST /api/auth/login` – Đăng nhập
+- [X] `POST /api/auth/logout` – Đăng xuất
+- [X] `GET /api/auth/me` – Phiên đăng nhập
+- [X] `GET /api/teams` – Danh sách nhóm
+- [X] `POST /api/teams` – Tạo nhóm
+- [X] `GET /api/teams/:id` – Chi tiết nhóm
+- [X] `PUT /api/teams/:id` – Cập nhật nhóm (Owner, Admin)
+- [X] `DELETE /api/teams/:id` – Xóa nhóm (Chỉ Owner)
+- [X] `POST /api/teams/:id/members` – Mời thành viên (Owner, Admin)
+- [X] `PATCH /api/teams/:id/members/:userId` – Đổi vai trò thành viên (Chỉ Owner)
+- [X] `DELETE /api/teams/:id/members/:userId` – Xóa thành viên / Rời nhóm (RBAC)
+- [X] `GET /api/teams/:id/tasks` – Danh sách task nhóm
+- [X] `POST /api/teams/:id/tasks` – Tạo task nhóm
+- [X] `PUT /api/tasks/:id` – Sửa task (RBAC)
+- [X] `DELETE /api/tasks/:id` – Xóa task (RBAC)
+- [X] `GET /api/teams/:id/messages` – Lấy lịch sử chat nhóm
+- [X] `POST /api/teams/:id/messages` – Gửi tin nhắn nhóm (Realtime)
+- [X] `GET /api/notifications` – Danh sách thông báo in-app
+- [X] `PUT /api/notifications` – Đánh dấu tất cả thông báo đã đọc
+- [X] `PUT /api/notifications/:id` – Đánh dấu một thông báo đã đọc
+
+---
+
+## 📄 4. Submission Information (Dành cho nộp bài Assignment 3 & 4)
 
 ```text
 Student Name: Nguyễn Thái Bảo
-Student ID: [Mã số sinh viên của bạn]
+Student ID: QE190108
 GitHub Repository URL: https://github.com/thai-baokin/assignment-thaibao
 Deployed Website URL: https://assignment-thaibao.vercel.app
-Test Account Email: admin@taskpulse.io
-Test Account Password: password123
-Additional Notes: Assignment 2 built with Next.js 16, TypeScript, Tailwind CSS, Prisma & Supabase PostgreSQL. Features include 13+ RESTful CRUD endpoints, JWT HttpOnly Cookie auth, RBAC authorization (Owner vs Member, Task deletion rights), Team switcher, Member invite flow, and an interactive Kanban board with multi-criteria filters.
+Test Account 1 (Owner): admin@taskpulse.io / password123
+
+Test Account 2 (Member): bao@taskpulse.io / password123
+Additional Notes: Assignment 3 & 4 extends Assignment 2 on the same codebase. Key additions include:
+1. Real-time Team Chat with persisted message history, typing indicators, and online presence via Supabase Realtime Broadcast.
+2. Live-updating Kanban task board across multiple users without page refresh.
+3. In-app notifications with Navbar bell dropdown, unread counter, audio chime, and event triggers for task assignment and team invitations.
+4. Advanced 3-tier Role-Based Access Control (Owner, Admin, Member) enforced strictly on both Next.js Route Handlers and UI components.
 ```
+

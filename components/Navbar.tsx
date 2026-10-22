@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { Menu, X, ChevronDown } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -54,8 +55,9 @@ export default function Navbar() {
           })}
 
           {/* Theme Toggle Button (Trắng / Đen) */}
-          <div className="ml-2 pl-2 border-l border-zinc-200 dark:border-zinc-800">
+          <div className="ml-2 pl-2 border-l border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
             <ThemeToggle />
+            {user && <NotificationBell />}
           </div>
 
           {/* User Auth Buttons or Profile Menu */}
@@ -125,8 +127,9 @@ export default function Navbar() {
           )}
         </nav>
 
-        {/* Mobile: ThemeToggle & Menu Button */}
+        {/* Mobile: NotificationBell, ThemeToggle & Menu Button */}
         <div className="flex md:hidden items-center gap-2">
+          {user && <NotificationBell />}
           <ThemeToggle />
           {user && (
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black text-xs font-bold uppercase">
@@ -141,6 +144,7 @@ export default function Navbar() {
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
+
       </div>
 
       {/* Mobile Menu Dropdown */}

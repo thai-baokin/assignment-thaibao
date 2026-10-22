@@ -26,7 +26,12 @@ import {
   Sparkles,
   UserCheck,
   User as UserIcon,
+  MessageSquare,
+  Shield,
+  ArrowUpDown,
 } from "lucide-react";
+import TeamChat from "@/components/TeamChat";
+import { supabase } from "@/lib/supabase-client";
 
 interface TeamMember {
   id: string;
@@ -92,8 +97,8 @@ export default function TeamDetailPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Tab: 'tasks' | 'members'
-  const [activeTab, setActiveTab] = useState<"tasks" | "members">("tasks");
+  // Tab: 'tasks' | 'members' | 'chat'
+  const [activeTab, setActiveTab] = useState<"tasks" | "members" | "chat">("tasks");
   // Task View mode: 'board' | 'table'
   const [viewMode, setViewMode] = useState<"board" | "table">("board");
 
@@ -121,6 +126,7 @@ export default function TeamDetailPage({
 
   // Form state for Member
   const [memberEmail, setMemberEmail] = useState("");
+  const [memberRole, setMemberRole] = useState<"MEMBER" | "ADMIN">("MEMBER");
   const [memberSubmitting, setMemberSubmitting] = useState(false);
   const [memberError, setMemberError] = useState<string | null>(null);
 
@@ -153,7 +159,83 @@ export default function TeamDetailPage({
     fetchTeamData();
   }, [fetchTeamData]);
 
+  // Xác định vai trò của người dùng hiện tại (Owner, Admin, Member)
+  const currentMember = team?.members.find((m) => m.userId === user?.id);
   const isOwner = user?.id === team?.ownerId;
+  const isAdmin = !isOwner && currentMember?.role === "ADMIN";
+  const isMember = !isOwner && !isAdmin;
+  const canManageMembers = isOwner || isAdmin;
+  const canEditTeamInfo = isOwner || isAdmin;
+
+  // Danh sách ID các Admin trong nhóm
+  const adminIds = team?.members.filter((m) => m.role === "ADMIN").map((m) => m.userId) || [];
+
+  // Helper phát broadcast event tới các thành viên khác trong nhóm qua Supabase Channel
+  const broadcastTeamEvent = useCallback(
+    async (event: string, payload: unknown) => {
+      try {
+        const channel = supabase.channel(`team-room-${teamId}`);
+        await channel.send({
+          type: "broadcast",
+          event,
+          payload,
+        });
+      } catch (err) {
+        console.warn("Lỗi broadcast team event:", err);
+      }
+    },
+    [teamId]
+  );
+
+  // Lắng nghe Real-time Task Board Updates từ các thành viên khác
+  useEffect(() => {
+    if (!teamId) return;
+
+    const channelName = `team-room-${teamId}`;
+    const channel = supabase.channel(channelName);
+
+    channel
+      .on("broadcast", { event: "task-created" }, (event) => {
+        const newTask = event.payload as TaskItem;
+        if (newTask && newTask.teamId === teamId) {
+          setTeam((prev) => {
+            if (!prev) return prev;
+            if (prev.tasks.some((t) => t.id === newTask.id)) return prev;
+            return { ...prev, tasks: [newTask, ...prev.tasks] };
+          });
+        }
+      })
+      .on("broadcast", { event: "task-updated" }, (event) => {
+        const updatedTask = event.payload as TaskItem;
+        if (updatedTask && updatedTask.teamId === teamId) {
+          setTeam((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              tasks: prev.tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+            };
+          });
+        }
+      })
+      .on("broadcast", { event: "task-deleted" }, (event) => {
+        const { id } = event.payload as { id: string };
+        if (id) {
+          setTeam((prev) => {
+            if (!prev) return prev;
+            return { ...prev, tasks: prev.tasks.filter((t) => t.id !== id) };
+          });
+        }
+      })
+      .on("broadcast", { event: "member-updated" }, () => {
+        fetchTeamData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [teamId, fetchTeamData]);
+
 
   // Open Task Modal (Create or Edit)
   const openCreateTask = () => {
@@ -207,13 +289,20 @@ export default function TeamDetailPage({
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const savedTask = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Không thể lưu công việc.");
+        throw new Error(savedTask.error || "Không thể lưu công việc.");
       }
 
       setIsTaskModalOpen(false);
       fetchTeamData();
+
+      // Broadcast Real-time event tới các thành viên khác
+      if (editingTask) {
+        broadcastTeamEvent("task-updated", savedTask);
+      } else {
+        broadcastTeamEvent("task-created", savedTask);
+      }
     } catch (err: unknown) {
       setTaskError(err instanceof Error ? err.message : "Lỗi khi lưu task.");
     } finally {
@@ -230,7 +319,17 @@ export default function TeamDetailPage({
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
-        fetchTeamData();
+        const updatedTask = await res.json();
+        // Cập nhật ngay local state
+        setTeam((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            tasks: prev.tasks.map((t) => (t.id === task.id ? updatedTask : t)),
+          };
+        });
+        // Broadcast Real-time event cho các thành viên khác
+        broadcastTeamEvent("task-updated", updatedTask);
       }
     } catch (err) {
       console.error(err);
@@ -248,7 +347,12 @@ export default function TeamDetailPage({
         alert(data.error || "Không thể xóa công việc.");
         return;
       }
-      fetchTeamData();
+      setTeam((prev) => {
+        if (!prev) return prev;
+        return { ...prev, tasks: prev.tasks.filter((t) => t.id !== task.id) };
+      });
+      // Broadcast xóa task cho các thành viên khác
+      broadcastTeamEvent("task-deleted", { id: task.id });
     } catch (err) {
       alert("Lỗi khi xóa công việc.");
     }
@@ -266,7 +370,10 @@ export default function TeamDetailPage({
       const res = await fetch(`/api/teams/${teamId}/members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: memberEmail.trim(), role: "MEMBER" }),
+        body: JSON.stringify({
+          email: memberEmail.trim(),
+          role: isOwner ? memberRole : "MEMBER",
+        }),
       });
 
       const data = await res.json();
@@ -275,12 +382,38 @@ export default function TeamDetailPage({
       }
 
       setMemberEmail("");
+      setMemberRole("MEMBER");
       setIsAddMemberOpen(false);
       fetchTeamData();
+      broadcastTeamEvent("member-updated", { action: "added" });
     } catch (err: unknown) {
       setMemberError(err instanceof Error ? err.message : "Lỗi khi thêm thành viên.");
     } finally {
       setMemberSubmitting(false);
+    }
+  };
+
+  // Toggle Member Role (Owner changes Admin <-> Member)
+  const handleToggleMemberRole = async (targetUserId: string, currentRole: string) => {
+    const nextRole = currentRole === "ADMIN" ? "MEMBER" : "ADMIN";
+    const roleText = nextRole === "ADMIN" ? "Quản trị viên (Admin)" : "Thành viên (Member)";
+    if (!confirm(`Bạn có muốn đổi vai trò của thành viên này thành ${roleText}?`)) return;
+
+    try {
+      const res = await fetch(`/api/teams/${teamId}/members/${targetUserId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: nextRole }),
+      });
+      if (res.ok) {
+        fetchTeamData();
+        broadcastTeamEvent("member-updated", { userId: targetUserId, role: nextRole });
+      } else {
+        const data = await res.json();
+        alert(data.error || "Không thể thay đổi vai trò.");
+      }
+    } catch {
+      alert("Lỗi khi thay đổi vai trò thành viên.");
     }
   };
 
@@ -303,6 +436,8 @@ export default function TeamDetailPage({
         return;
       }
 
+      broadcastTeamEvent("member-updated", { action: "removed", userId: targetUserId });
+
       if (isSelf) {
         router.push("/teams");
       } else {
@@ -312,6 +447,7 @@ export default function TeamDetailPage({
       alert("Lỗi khi xử lý thành viên.");
     }
   };
+
 
   // Update Team Info
   const handleUpdateTeam = async (e: React.FormEvent) => {
@@ -412,23 +548,25 @@ export default function TeamDetailPage({
           ← Danh sách các nhóm
         </Link>
 
-        {/* Owner Settings Actions */}
-        {isOwner && (
-          <div className="flex items-center gap-2">
+        {/* Team Settings Actions */}
+        <div className="flex items-center gap-2">
+          {canEditTeamInfo && (
             <button
               onClick={() => setIsEditTeamOpen(true)}
               className="btn-3d-secondary px-3 py-1.5 text-xs font-semibold cursor-pointer"
             >
               <span>Sửa nhóm</span>
             </button>
+          )}
+          {isOwner && (
             <button
               onClick={handleDeleteTeam}
               className="px-3 py-1.5 rounded-xl border border-zinc-300 bg-white hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900 text-xs font-semibold text-zinc-600 hover:text-rose-600 dark:text-zinc-400 dark:hover:text-rose-400 transition-colors cursor-pointer"
             >
               <span>Xóa nhóm</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Team Header Banner (3D Card Surface) */}
@@ -439,12 +577,19 @@ export default function TeamDetailPage({
               {team.name}
             </h1>
             {isOwner ? (
-              <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-bold bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white">
-                Trưởng nhóm
+              <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-bold bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white inline-flex items-center gap-1">
+                <Crown className="h-3 w-3 text-amber-400" />
+                <span>Trưởng nhóm (Owner)</span>
+              </span>
+            ) : isAdmin ? (
+              <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white dark:bg-blue-500 border border-blue-600 dark:border-blue-500 inline-flex items-center gap-1">
+                <ShieldCheck className="h-3 w-3" />
+                <span>Quản trị viên (Admin)</span>
               </span>
             ) : (
-              <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-800 border border-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700">
-                Thành viên
+              <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-800 border border-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 inline-flex items-center gap-1">
+                <UserIcon className="h-3 w-3" />
+                <span>Thành viên (Member)</span>
               </span>
             )}
           </div>
@@ -471,31 +616,47 @@ export default function TeamDetailPage({
         </div>
       </div>
 
-      {/* Tabs Switcher: Tasks vs Members */}
+      {/* Tabs Switcher: Tasks vs Members vs Chat */}
       <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex gap-4">
           <button
             onClick={() => setActiveTab("tasks")}
-            className={`pb-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer ${
+            className={`pb-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer inline-flex items-center gap-1.5 ${
               activeTab === "tasks"
                 ? "border-black text-black dark:border-white dark:text-white"
                 : "border-transparent text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white"
             }`}
           >
+            <CheckSquare className="h-4 w-4" />
             <span>Công việc ({team.tasks.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab("members")}
-            className={`pb-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer ${
+            className={`pb-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer inline-flex items-center gap-1.5 ${
               activeTab === "members"
                 ? "border-black text-black dark:border-white dark:text-white"
                 : "border-transparent text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white"
             }`}
           >
+            <Users className="h-4 w-4" />
             <span>Thành viên ({team.members.length})</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab("chat")}
+            className={`pb-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+              activeTab === "chat"
+                ? "border-black text-black dark:border-white dark:text-white"
+                : "border-transparent text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white"
+            }`}
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span>Trò chuyện nhóm</span>
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+          </button>
         </div>
+
 
         {/* View Mode Toggle when on Tasks tab */}
         {activeTab === "tasks" && (
@@ -860,22 +1021,25 @@ export default function TeamDetailPage({
       )}
 
       {/* ============================================================== */}
-      {/* TAB 2: MEMBERS VIEW                                            */}
+      {/* TAB 2: MEMBERS VIEW WITH ROLE MANAGEMENT                       */}
       {/* ============================================================== */}
       {activeTab === "members" && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-black dark:text-white">Thành viên nhóm</h3>
-              <p className="text-xs text-zinc-500">Danh sách các thành viên cùng tham gia nhóm làm việc.</p>
+              <p className="text-xs text-zinc-500">
+                Phân quyền 3 cấp (Trưởng nhóm, Quản trị viên, Thành viên).
+              </p>
             </div>
 
-            {/* Owner Add Member Button */}
-            {isOwner && (
+            {/* Add Member Button: Visible to Owner and Admin */}
+            {canManageMembers && (
               <button
                 onClick={() => setIsAddMemberOpen(true)}
-                className="btn-3d-primary px-3.5 py-2 text-xs font-semibold cursor-pointer inline-flex items-center justify-center"
+                className="btn-3d-primary px-3.5 py-2 text-xs font-semibold cursor-pointer inline-flex items-center justify-center gap-1.5"
               >
+                <UserPlus className="h-3.5 w-3.5" />
                 <span>Mời thành viên</span>
               </button>
             )}
@@ -885,7 +1049,15 @@ export default function TeamDetailPage({
             <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {team.members.map((m) => {
                 const isMemberOwner = m.role === "OWNER" || m.userId === team.ownerId;
+                const isMemberAdmin = !isMemberOwner && m.role === "ADMIN";
                 const isCurrent = m.userId === user?.id;
+
+                // Quyền xóa thành viên:
+                // - Owner: xóa bất kỳ ai trừ chính mình
+                // - Admin: chỉ xóa được Member thường
+                const canRemoveThisUser =
+                  (isOwner && !isMemberOwner) ||
+                  (isAdmin && !isMemberOwner && !isMemberAdmin && !isCurrent);
 
                 return (
                   <div key={m.id} className="p-4 flex items-center justify-between gap-4">
@@ -906,28 +1078,48 @@ export default function TeamDetailPage({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+                      {/* Role Badge */}
                       {isMemberOwner ? (
-                        <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-bold bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white">
-                          Trưởng nhóm
+                        <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-bold bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white inline-flex items-center gap-1">
+                          <Crown className="h-3 w-3 text-amber-400" />
+                          <span>Trưởng nhóm</span>
+                        </span>
+                      ) : isMemberAdmin ? (
+                        <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white dark:bg-blue-500 border border-blue-600 dark:border-blue-500 inline-flex items-center gap-1">
+                          <ShieldCheck className="h-3 w-3" />
+                          <span>Quản trị viên</span>
                         </span>
                       ) : (
-                        <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-800 border border-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700">
-                          Thành viên
+                        <span className="pill-3d px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-800 border border-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 inline-flex items-center gap-1">
+                          <UserIcon className="h-3 w-3" />
+                          <span>Thành viên</span>
                         </span>
                       )}
 
-                      {/* Action buttons */}
+                      {/* Owner Controls: Change Member Role (ADMIN <-> MEMBER) */}
                       {isOwner && !isMemberOwner && (
                         <button
+                          onClick={() => handleToggleMemberRole(m.userId, m.role)}
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-zinc-200 hover:border-black bg-white hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-white text-zinc-800 dark:text-zinc-200 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                          title="Thay đổi vai trò thành viên"
+                        >
+                          <ArrowUpDown className="h-3 w-3" />
+                          <span>{m.role === "ADMIN" ? "Hạ thành viên" : "Thăng Admin"}</span>
+                        </button>
+                      )}
+
+                      {/* Remove Member button */}
+                      {canRemoveThisUser && (
+                        <button
                           onClick={() => handleRemoveMember(m.userId, m.user.name)}
-                          className="px-2.5 py-1 rounded-lg text-xs font-semibold text-zinc-500 hover:text-rose-600 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold text-zinc-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                         >
                           Xóa
                         </button>
                       )}
 
-                      {/* Leave team if current user is member (not owner) */}
+                      {/* Leave team if current user is not owner */}
                       {!isOwner && isCurrent && (
                         <button
                           onClick={() => handleRemoveMember(m.userId, m.user.name)}
@@ -944,6 +1136,19 @@ export default function TeamDetailPage({
           </div>
         </div>
       )}
+
+      {/* ============================================================== */}
+      {/* TAB 3: REAL-TIME TEAM CHAT ROOM                                */}
+      {/* ============================================================== */}
+      {activeTab === "chat" && (
+        <TeamChat
+          teamId={team.id}
+          teamName={team.name}
+          ownerId={team.ownerId}
+          adminIds={adminIds}
+        />
+      )}
+
 
 
       {/* ============================================================== */}
@@ -1121,12 +1326,30 @@ export default function TeamDetailPage({
                   placeholder="name@company.com"
                   className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-3 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:placeholder:text-zinc-500"
                 />
-                <p className="mt-1.5 text-[11px] text-zinc-400">
-                  Thành viên cần có tài khoản trên hệ thống để được thêm vào nhóm.
-                </p>
               </div>
 
+              {isOwner && (
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Vai trò trong nhóm
+                  </label>
+                  <select
+                    value={memberRole}
+                    onChange={(e) => setMemberRole(e.target.value as "MEMBER" | "ADMIN")}
+                    className="w-full rounded-xl border border-zinc-300 bg-white py-2 px-2.5 text-xs text-black outline-none focus:border-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  >
+                    <option value="MEMBER">Thành viên (Member) - Tạo & quản lý task cá nhân</option>
+                    <option value="ADMIN">Quản trị viên (Admin) - Quản lý thành viên & mọi task</option>
+                  </select>
+                </div>
+              )}
+
+              <p className="text-[11px] text-zinc-400">
+                Thành viên cần có tài khoản trên hệ thống để được thêm vào nhóm.
+              </p>
+
               <div className="pt-2 flex items-center justify-end gap-2">
+
                 <button
                   type="button"
                   onClick={() => setIsAddMemberOpen(false)}
