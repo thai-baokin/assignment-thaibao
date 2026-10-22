@@ -160,15 +160,16 @@ export default function TeamDetailPage({
   }, [fetchTeamData]);
 
   // Xác định vai trò của người dùng hiện tại (Owner, Admin, Member)
-  const currentMember = team?.members.find((m) => m.userId === user?.id);
+  const currentMember = team?.members ? team.members.find((m) => m.userId === user?.id) : undefined;
   const isOwner = user?.id === team?.ownerId;
   const isAdmin = !isOwner && currentMember?.role === "ADMIN";
   const isMember = !isOwner && !isAdmin;
   const canManageMembers = isOwner || isAdmin;
   const canEditTeamInfo = isOwner || isAdmin;
 
-  // Danh sách ID các Admin trong nhóm
-  const adminIds = team?.members.filter((m) => m.role === "ADMIN").map((m) => m.userId) || [];
+  // Danh sách ID các Admin trong nhóm (an toàn khi team chưa tải xong)
+  const adminIds = team?.members ? team.members.filter((m) => m.role === "ADMIN").map((m) => m.userId) : [];
+
 
   // Helper phát broadcast event tới các thành viên khác trong nhóm qua Supabase Channel
   const broadcastTeamEvent = useCallback(
