@@ -5,7 +5,7 @@ import { broadcastRealtime, teamChatTopic } from "@/lib/realtime-broadcast";
 
 export const dynamic = "force-dynamic";
 
-const MAX_ATTACHMENT_LENGTH = 2_500_000;
+const MAX_ATTACHMENT_LENGTH = 4_600_000;
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -111,7 +111,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       }
       if (attachmentUrl.length > MAX_ATTACHMENT_LENGTH) {
         return NextResponse.json(
-          { error: "Tệp đính kèm quá lớn. Vui lòng chọn tệp nhỏ hơn 1.5MB." },
+          { error: "Tệp đính kèm quá lớn. Vui lòng chọn tệp nhỏ hơn 3.2MB." },
           { status: 413 }
         );
       }
@@ -159,7 +159,17 @@ export async function POST(request: Request, { params }: RouteParams) {
       },
     });
 
-    await broadcastRealtime(teamChatTopic(teamId), "new-message", message);
+    // Nếu file đính kèm lớn (vượt giới hạn 180KB của Supabase Realtime broadcast REST API),
+    // gửi sự kiện new-message-large để client khác lập tức fetch tin nhắn từ DB mà không bị lỗi 413!
+    if (message.attachmentUrl && message.attachmentUrl.length > 180_000) {
+      await broadcastRealtime(teamChatTopic(teamId), "new-message-large", {
+        id: message.id,
+        teamId,
+        senderId: message.senderId,
+      });
+    } else {
+      await broadcastRealtime(teamChatTopic(teamId), "new-message", message);
+    }
 
     return NextResponse.json(message, { status: 201 });
   } catch (error) {

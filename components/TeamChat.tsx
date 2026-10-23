@@ -30,7 +30,7 @@ export interface ChatMessage {
   } | null;
 }
 
-const MAX_ATTACHMENT_SIZE = 1.5 * 1024 * 1024;
+const MAX_ATTACHMENT_SIZE = 3.2 * 1024 * 1024;
 
 interface TeamChatProps {
   teamId: string;
@@ -120,6 +120,15 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
           return [...prev, safeMsg];
         });
         setTimeout(() => scrollToBottom("smooth"), 80);
+      }
+    });
+
+    // 1b. Lắng nghe tin nhắn có file lớn (tự động fetch từ server để hiển thị ngay)
+    channel.on("broadcast", { event: "new-message-large" }, (event) => {
+      const payload = event.payload as { id?: string; senderId?: string };
+      if (payload && payload.senderId !== userId) {
+        fetchMessages();
+        setTimeout(() => scrollToBottom("smooth"), 200);
       }
     });
 
@@ -227,7 +236,7 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
     if (!file) return;
 
     if (file.size > MAX_ATTACHMENT_SIZE) {
-      alert("Tệp quá lớn. Vui lòng chọn tệp nhỏ hơn 1.5MB.");
+      alert("Tệp quá lớn. Vui lòng chọn tệp nhỏ hơn 3.2MB (đủ cho tài liệu Word/PDF/ảnh).");
       e.target.value = "";
       return;
     }
@@ -572,7 +581,7 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          title="Đính kèm tệp hoặc ảnh (tối đa 1.5MB)"
+          title="Đính kèm tệp hoặc ảnh (tối đa 3.2MB)"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-600 transition-colors hover:border-black hover:text-black dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-white dark:hover:text-white cursor-pointer"
         >
           <Paperclip className="h-4 w-4" />
