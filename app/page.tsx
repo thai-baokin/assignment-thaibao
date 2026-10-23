@@ -56,7 +56,6 @@ export default function HomePage() {
 
   useEffect(() => {
     let isCancelled = false;
-    setIsLoading(true);
 
     fetch("/api/tasks")
       .then(async (res) => {

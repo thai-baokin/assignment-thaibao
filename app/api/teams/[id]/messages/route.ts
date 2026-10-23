@@ -54,11 +54,11 @@ export async function GET(request: Request, { params }: RouteParams) {
           select: { id: true, name: true, email: true },
         },
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
       take: 100,
     });
 
-    return NextResponse.json(messages, { status: 200 });
+    return NextResponse.json(messages.reverse(), { status: 200 });
   } catch (error) {
     console.error("Lỗi khi lấy tin nhắn:", error);
     return NextResponse.json({ error: "Lỗi máy chủ." }, { status: 500 });

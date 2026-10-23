@@ -12,6 +12,7 @@ export interface NotificationItem {
   title: string;
   message: string;
   relatedId: string | null;
+  targetUrl?: string | null;
   read: boolean;
   createdAt: string;
 }
@@ -27,6 +28,7 @@ export default function NotificationBell() {
     NotificationPermission | "unsupported"
   >("default");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const seenNotificationIds = useRef<Set<string>>(new Set());
 
   // Fetch danh sách thông báo
   const fetchNotifications = useCallback(async () => {
@@ -35,6 +37,9 @@ export default function NotificationBell() {
       const res = await fetch("/api/notifications");
       if (res.ok) {
         const data = await res.json();
+        (data.notifications || []).forEach((n: NotificationItem) => {
+          if (n.id) seenNotificationIds.current.add(n.id);
+        });
         setNotifications(data.notifications || []);
         setUnreadCount(data.unreadCount || 0);
       }
@@ -44,7 +49,9 @@ export default function NotificationBell() {
   }, [user]);
 
   useEffect(() => {
-    fetchNotifications();
+    queueMicrotask(() => {
+      void fetchNotifications();
+    });
   }, [fetchNotifications]);
 
   // Đồng bộ trạng thái quyền thông báo trình duyệt sau khi mount (tránh lệch hydration)
@@ -80,9 +87,11 @@ export default function NotificationBell() {
     channel
       .on("broadcast", { event: "new-notification" }, (event) => {
         const newNotif = event.payload as NotificationItem;
-        if (newNotif) {
+        if (newNotif && newNotif.id) {
+          if (seenNotificationIds.current.has(newNotif.id)) return;
+          seenNotificationIds.current.add(newNotif.id);
           setNotifications((prev) => [newNotif, ...prev.filter((n) => n.id !== newNotif.id)]);
-          setUnreadCount((c) => c + 1);
+          if (!newNotif.read) setUnreadCount((c) => c + 1);
 
           // Phát âm thanh thông báo nhẹ qua Web Audio API
           try {
@@ -177,10 +186,16 @@ export default function NotificationBell() {
 
     setIsOpen(false);
 
-    // Chuyển hướng tới trang phù hợp
-    if (item.type === "ADDED_TO_TEAM" && item.relatedId) {
-      router.push(`/teams/${item.relatedId}`);
-    } else if (item.type === "ASSIGNED_TASK") {
+    // Chuyển hướng tới trang phù hợp (nhóm và công việc cụ thể)
+    if (item.targetUrl) {
+      router.push(item.targetUrl);
+    } else if (item.relatedId) {
+      if (item.relatedId.startsWith("/teams")) {
+        router.push(item.relatedId);
+      } else {
+        router.push(`/teams/${item.relatedId}`);
+      }
+    } else {
       router.push("/teams");
     }
   };

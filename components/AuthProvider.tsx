@@ -101,7 +101,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    fetchCurrentUser();
+    queueMicrotask(() => {
+      void fetchCurrentUser();
+    });
   }, [fetchCurrentUser]);
 
   useEffect(() => {

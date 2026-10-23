@@ -20,6 +20,41 @@ export async function PUT(request: Request, { params }: RouteParams) {
     const body = await request.json();
     const { title, description, status, priority, dueDate, assigneeId } = body;
 
+    if (title !== undefined && (typeof title !== "string" || title.trim().length === 0)) {
+      return NextResponse.json(
+        { error: "Tiêu đề công việc không được để trống." },
+        { status: 400 }
+      );
+    }
+
+    if (
+      description !== undefined &&
+      description !== null &&
+      typeof description !== "string"
+    ) {
+      return NextResponse.json({ error: "Mô tả công việc không hợp lệ." }, { status: 400 });
+    }
+
+    const validStatuses = ["TODO", "IN_PROGRESS", "DONE"];
+    const validPriorities = ["LOW", "MEDIUM", "HIGH"];
+
+    if (status !== undefined && !validStatuses.includes(status)) {
+      return NextResponse.json({ error: "Trạng thái công việc không hợp lệ." }, { status: 400 });
+    }
+
+    if (priority !== undefined && !validPriorities.includes(priority)) {
+      return NextResponse.json({ error: "Độ ưu tiên công việc không hợp lệ." }, { status: 400 });
+    }
+
+    if (
+      dueDate !== undefined &&
+      dueDate !== null &&
+      dueDate !== "" &&
+      Number.isNaN(new Date(dueDate).getTime())
+    ) {
+      return NextResponse.json({ error: "Hạn chót không hợp lệ." }, { status: 400 });
+    }
+
     // Kiểm tra task có tồn tại không
     const existingTask = await prisma.task.findUnique({
       where: { id },
@@ -117,7 +152,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
         type: "ASSIGNED_TASK",
         title: "Bạn được phân công công việc mới",
         message: `${session.name} đã phân công công việc "${updatedTask.title}" cho bạn trong nhóm "${existingTask.team.name}".`,
-        relatedId: updatedTask.id,
+        relatedId: `${existingTask.team.id}?taskId=${updatedTask.id}`,
       });
     }
 

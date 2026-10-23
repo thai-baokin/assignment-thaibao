@@ -129,7 +129,7 @@
 - **Database:** PostgreSQL (Supabase Free Tier)
 - **ORM:** Prisma v6.4.1
 - **Auth & Security:** JWT qua thư viện `jose`, lưu trữ trong HttpOnly Cookie (`taskpulse_token`), mật khẩu mã hóa với `bcryptjs`
-- **Route Protection:** Next.js Edge Middleware (`middleware.ts`)
+- **Route Protection:** Next.js Proxy (`proxy.ts`, formerly Edge Middleware)
 - **Hosting / Deployment:** Vercel
 
 ---
@@ -146,7 +146,7 @@
 - [X] **Đăng ký tài khoản (`/register`):** Hỗ trợ nhập Họ tên, Email, Mật khẩu (validate >= 6 ký tự, email hợp lệ).
 - [X] **Đăng nhập (`/login`):** Xác thực mật khẩu đã hash với `bcryptjs`, cấp JWT token và lưu vào HttpOnly cookie an toàn.
 - [X] **Đăng xuất (`POST /api/auth/logout`):** Nút đăng xuất tại Navbar và Dropdown profile, tự động dọn dẹp cookie phiên.
-- [X] **Bảo vệ Route (Middleware):** Khách chưa đăng nhập chỉ được xem trang chủ (`/`), trang đăng nhập (`/login`) và đăng ký (`/register`). Mọi trang nhóm (`/teams/*`) đều yêu cầu đăng nhập.
+- [X] **Bảo vệ Route (Next.js Proxy):** Khách chưa đăng nhập chỉ được xem trang chủ (`/`), trang đăng nhập (`/login`) và đăng ký (`/register`). Mọi trang nhóm (`/teams/*`) đều yêu cầu đăng nhập.
 - [X] **Tài khoản kiểm thử cho người chấm:**
   - `admin@taskpulse.io` / `password123` (Owner)
   - `member@taskpulse.io` / `password123` (Member)

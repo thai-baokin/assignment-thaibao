@@ -84,7 +84,9 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
   }, [teamId]);
 
   useEffect(() => {
-    fetchMessages();
+    queueMicrotask(() => {
+      void fetchMessages();
+    });
   }, [fetchMessages]);
 
   // Kết nối Real-time qua Supabase Channel (Broadcast & Presence)
@@ -174,7 +176,11 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
           const data = await res.json();
           if (Array.isArray(data)) {
             setMessages((prev) => {
-              if (data.length !== prev.length) {
+              const latestIncoming = data[data.length - 1]?.id;
+              const latestCurrent = prev[prev.length - 1]?.id;
+              const changed =
+                data.length !== prev.length || latestIncoming !== latestCurrent;
+              if (changed) {
                 setTimeout(() => scrollToBottom("smooth"), 50);
                 return data;
               }

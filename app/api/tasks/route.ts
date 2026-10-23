@@ -60,16 +60,28 @@ export async function POST(request: Request) {
       );
     }
 
+    // Endpoint này chỉ dành cho công việc cá nhân. Công việc nhóm phải được tạo
+    // qua POST /api/teams/:id/tasks để đảm bảo kiểm tra tư cách thành viên.
+    if (teamId || assigneeId) {
+      return NextResponse.json(
+        { error: "Vui lòng tạo công việc nhóm qua /api/teams/:id/tasks." },
+        { status: 400 }
+      );
+    }
+
+    const validStatuses = ["TODO", "IN_PROGRESS", "DONE"];
+    const validPriorities = ["LOW", "MEDIUM", "HIGH"];
+
     const newTask = await prisma.task.create({
       data: {
         title: title.trim(),
         description: description?.trim() || null,
-        status: status || "TODO",
-        priority: priority || "MEDIUM",
+        status: validStatuses.includes(status) ? status : "TODO",
+        priority: validPriorities.includes(priority) ? priority : "MEDIUM",
         dueDate: dueDate ? new Date(dueDate) : null,
-        teamId: teamId || null,
+        teamId: null,
         creatorId: session?.userId || null,
-        assigneeId: assigneeId || null,
+        assigneeId: null,
       },
       include: {
         assignee: { select: { id: true, name: true, email: true } },

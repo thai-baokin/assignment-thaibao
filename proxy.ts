@@ -6,7 +6,7 @@ const AUTH_COOKIE_NAME = "taskpulse_token";
 const JWT_SECRET = process.env.JWT_SECRET || "taskpulse-secure-jwt-secret-assignment-2-key-32chars";
 const secretKey = new TextEncoder().encode(JWT_SECRET);
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
 

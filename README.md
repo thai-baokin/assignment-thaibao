@@ -1,169 +1,255 @@
-# 🚀 TaskPulse - Task & Team Management Application
+# TaskPulse - Task & Team Management App
 
-> **Assignment 2:** Task & Team Management App: CRUD API with Authentication, Role-based Authorization (RBAC), and Kanban Workspace.
+> Assignment 3 & 4: Real-time Collaboration & Advanced Features.
+> Built on the same repository and Vercel project as Assignments 1 and 2.
 
----
-
-## 📌 Project Overview
-**TaskPulse** is a full-featured Task & Team Management application built with **Next.js 16 (App Router)**, **TypeScript**, **Tailwind CSS v4**, **Prisma ORM**, and **Supabase PostgreSQL**.
-
-Extending from Assignment 1, Assignment 2 adds complete **User Authentication (JWT + HTTP-Only Cookies + Bcrypt)**, **Team Management & Member Invites**, **Role-Based Authorization (Owner vs Member)**, a **Full RESTful CRUD API (14+ endpoints)**, and an interactive **Kanban Board** with task filtering & search.
+TaskPulse is a full-stack team workspace built with **Next.js 16 (App Router, TypeScript)**, **Tailwind CSS v4**, **Prisma 6.4.1**, **Supabase PostgreSQL**, and **Supabase Realtime**. It includes authentication, multi-team workspaces, a live Kanban board, persisted team chat, in-app notifications, an activity log, and a three-tier permission system.
 
 ---
 
-## 🔑 Test Accounts (For Submission Grading)
+## Submission Information
 
-Pre-seeded accounts are readily available for immediate login and evaluation:
+```text
+Student ID: QE190108
+Full Name: Nguyễn Thái Bảo
+GitHub Repository URL: https://github.com/thai-baokin/assignment-thaibao
+Deployed Website URL (Vercel): https://assignment-thaibao.vercel.app
+Separate Backend URL (NestJS on Render) — write N/A if not used: N/A
+Real-time mechanism used (Supabase Realtime / Socket.io / Pusher / Ably): Supabase Realtime (Broadcast + Presence)
+Test Account 1 Email: admin@taskpulse.io
+Test Account 1 Password: password123
+Test Account 2 Email (must be on the SAME team as Account 1, to test real-time between two sessions): member@taskpulse.io
+Test Account 2 Password: password123
+Both test accounts are already email-verified / ready to log in immediately, with no confirmation link needed (Yes / No): Yes
+Demo video link (YouTube/Drive/Loom, 2–3 minutes, showing live chat and live task updates across two sessions): [Add demo video link before submission]
+```
 
-| Email | Password | Role | Team Permissions |
-| :--- | :--- | :--- | :--- |
-| **`admin@taskpulse.io`** | **`password123`** | **Owner** | Full rights: Edit/Delete team, invite/remove members, create/update/delete tasks |
-| **`member@taskpulse.io`** | **`password123`** | **Member** | Create tasks, update status/details, delete only assigned/created tasks, leave team |
-
-> 💡 **Quick Login:** On the `/login` page, you can click the **"Điền nhanh"** button to auto-fill the test account with 1 click.
-
----
-
-## 🛠️ Tech Stack
-- **Framework & Runtime:** [Next.js 16](https://nextjs.org/) (App Router, Turbopack, React 19)
-- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/) & [Lucide Icons](https://lucide.dev/)
-- **Database:** [PostgreSQL on Supabase](https://supabase.com/) (Connection Pooler + Direct URL)
-- **ORM:** [Prisma 6.4](https://www.prisma.io/)
-- **Authentication & Security:** JWT session via [`jose`](https://github.com/panva/jose) in HTTP-only cookies, password hashing with [`bcryptjs`](https://github.com/dcodeIO/bcrypt.js)
-- **Routing Protection:** Next.js Edge Middleware
-- **Deployment:** [Vercel](https://vercel.com/)
-- **CI/CD:** GitHub Actions
+Both test accounts are seeded into the same team. Authentication uses an HttpOnly cookie, so test the two accounts in **two separate browser profiles** (or one normal window and one incognito window). Switching accounts in the same profile intentionally syncs all tabs to the new session.
 
 ---
 
-## 📊 Entity Relationship Diagram (ERD)
+## Tech Stack
+
+- **Frontend & API:** Next.js 16 (App Router, Route Handlers, Turbopack), React 19, TypeScript
+- **Styling:** Tailwind CSS v4, Lucide Icons
+- **Database:** PostgreSQL on Supabase (connection pooler + direct URL)
+- **ORM:** Prisma 6.4.1
+- **Auth:** JWT signed with `jose`, stored in an HttpOnly cookie (`taskpulse_token`); passwords hashed with `bcryptjs`
+- **Real-time:** Supabase Realtime Broadcast channels + Presence
+- **Route protection:** Next.js `proxy.ts` (formerly middleware)
+- **Deployment:** Vercel
+- **CI:** GitHub Actions (`lint` + `build`)
+
+---
+
+## Features
+
+### Real-time team chat
+- One chat room per team with persisted history (`Message` model).
+- New messages are delivered instantly through the `team-chat-<teamId>` Supabase Realtime channel.
+- Message bubbles distinguish the current user (right) from other members (left, with avatar and timestamp).
+- Auto-scroll, Enter-to-send, typing indicator, online presence, and file/image attachments (max 1.5 MB).
+- A 25-second polling fallback keeps history consistent if the WebSocket connection drops.
+
+### Live task board
+- Kanban columns: **To Do**, **In Progress**, **Done**, plus a table view.
+- Task created, updated, or deleted events are broadcast on `team-tasks-<teamId>` and applied without a page refresh.
+- One-click status transitions and live filters/search by status, priority, and assignee.
+
+### Notifications
+- In-app notification when a user is assigned a task (`ASSIGNED_TASK`) or added to a team (`ADDED_TO_TEAM`).
+- Persisted in the `Notification` model and delivered live on `notifications:user-<userId>`.
+- Navbar bell with unread badge, dropdown list, relative timestamps, mark-one/mark-all as read, click-to-navigate, audio chime, and browser desktop notifications.
+- A 30-second polling fallback keeps the bell in sync.
+
+### Activity log
+- `ActivityLog` records team creation/update, member add/remove/role changes, and task create/update/delete.
+- The **Activity** tab shows the latest 100 events with actor, action, and time.
+
+### Three-tier roles and permissions
+| Action | Owner | Admin | Member |
+| --- | --- | --- | --- |
+| Edit team information | Yes | Yes | No |
+| Delete team | Yes | No | No |
+| Invite members | Yes | Yes | No |
+| Change member role | Yes | No | No |
+| Remove members | Anyone except self | Members only | Only leave themselves |
+| Create tasks | Yes | Yes | Yes |
+| Edit any task | Yes | Yes | Own/assigned tasks only |
+| Delete any task | Yes | Yes | Own/assigned tasks only |
+| View team, chat, activity | Yes | Yes | Yes |
+
+Permissions are enforced in **both** the Route Handlers (`lib/permissions.ts`) and the UI (hidden/disabled controls).
+
+---
+
+## Real-time Architecture
+
+Server-side Route Handlers write to PostgreSQL first, then publish an event through the Supabase Realtime Broadcast REST API (`lib/realtime-broadcast.ts`). Connected browsers subscribe with `@supabase/supabase-js` and update local state when events arrive.
+
+| Channel | Events | Used by |
+| --- | --- | --- |
+| `team-chat-<teamId>` | `new-message`, `typing`, presence sync | `components/TeamChat.tsx` |
+| `team-tasks-<teamId>` | `task-created`, `task-updated`, `task-deleted` | `app/teams/[id]/page.tsx` |
+| `team-members-<teamId>` | `member-updated`, `team-updated` | `app/teams/[id]/page.tsx` |
+| `notifications:user-<userId>` | `new-notification` | `components/NotificationBell.tsx` |
+
+Required environment variables:
+
+```env
+DATABASE_URL="postgresql://postgres.[REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
+DIRECT_URL="postgresql://postgres.[REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres"
+JWT_SECRET="your-jwt-secret-at-least-32-chars-long"
+NEXT_PUBLIC_SUPABASE_URL="https://[PROJECT_REF].supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="[YOUR_SUPABASE_ANON_KEY]"
+# Optional: used by server-side broadcasts; falls back to the anon key.
+SUPABASE_SERVICE_ROLE_KEY=""
+```
+
+---
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register a new account
+- `POST /api/auth/login` - Sign in and issue the HttpOnly session cookie
+- `POST /api/auth/logout` - Clear the session cookie
+- `GET /api/auth/me` - Current session and team memberships
+
+### Teams
+- `GET /api/teams` - Teams the current user belongs to
+- `POST /api/teams` - Create a team (creator becomes Owner)
+- `GET /api/teams/:id` - Team details with members, tasks, and owner
+- `PUT /api/teams/:id` - Update team (Owner/Admin)
+- `DELETE /api/teams/:id` - Delete team (Owner only)
+
+### Members
+- `POST /api/teams/:id/members` - Invite a registered user by email (Owner/Admin)
+- `PATCH /api/teams/:id/members/:userId` - Change role `ADMIN`/`MEMBER` (Owner only)
+- `DELETE /api/teams/:id/members/:userId` - Remove a member or leave the team (RBAC)
+
+### Tasks
+- `GET /api/teams/:id/tasks` - List team tasks (members)
+- `POST /api/teams/:id/tasks` - Create a team task (members)
+- `PUT /api/tasks/:id` - Update a task (RBAC)
+- `DELETE /api/tasks/:id` - Delete a task (RBAC)
+- `GET /api/tasks` and `POST /api/tasks` - Personal tasks used by the home page (from earlier assignments)
+
+### Chat, notifications, activity
+- `GET /api/teams/:id/messages` - Latest 100 messages (members)
+- `POST /api/teams/:id/messages` - Send a message and broadcast it (members)
+- `GET /api/notifications` - Notifications + unread count
+- `PUT /api/notifications` - Mark all notifications as read
+- `PUT /api/notifications/:id` - Mark one notification as read
+- `GET /api/teams/:id/activity` - Latest 100 activity entries (members)
+
+---
+
+## Data Model
 
 ```mermaid
 erDiagram
-    User ||--o{ Team : "owns (TeamOwner)"
-    User ||--o{ TeamMember : "belongs to (memberships)"
-    User ||--o{ Task : "creates (createdTasks)"
-    User ||--o{ Task : "assigned to (assignedTasks)"
-    
+    User ||--o{ Team : "owns"
+    User ||--o{ TeamMember : "memberships"
+    User ||--o{ Task : "creates"
+    User ||--o{ Task : "assigned"
+    User ||--o{ Message : "sends"
+    User ||--o{ Notification : "receives"
+    User ||--o{ ActivityLog : "performs"
+
     Team ||--o{ TeamMember : "has members"
     Team ||--o{ Task : "contains tasks"
-
-    User {
-        String id PK
-        String name
-        String email UK
-        String password
-        DateTime createdAt
-        DateTime updatedAt
-    }
-
-    Team {
-        String id PK
-        String name
-        String description
-        String ownerId FK
-        DateTime createdAt
-        DateTime updatedAt
-    }
+    Team ||--o{ Message : "chat history"
+    Team ||--o{ ActivityLog : "activity trail"
 
     TeamMember {
         String id PK
         String teamId FK
         String userId FK
-        String role "OWNER | MEMBER"
+        String role "OWNER | ADMIN | MEMBER"
         DateTime joinedAt
     }
 
-    Task {
+    Message {
         String id PK
-        String title
-        String description
-        String status "TODO | IN_PROGRESS | DONE"
-        String priority "LOW | MEDIUM | HIGH"
-        DateTime dueDate
+        String content
         String teamId FK
-        String creatorId FK
-        String assigneeId FK
+        String senderId FK
+        String attachmentUrl
+        String attachmentName
+        String attachmentType
         DateTime createdAt
-        DateTime updatedAt
+    }
+
+    Notification {
+        String id PK
+        String userId FK
+        String type "ASSIGNED_TASK | ADDED_TO_TEAM"
+        String title
+        String message
+        String relatedId
+        Boolean read
+        DateTime createdAt
+    }
+
+    ActivityLog {
+        String id PK
+        String teamId FK
+        String userId FK
+        String action
+        String detail
+        String metadata
+        DateTime createdAt
     }
 ```
 
 ---
 
-## 🌐 RESTful API Endpoints
+## Local Development
 
-### 1. Authentication Endpoints
-- `POST /api/auth/register` – Register a new user (`name`, `email`, `password`)
-- `POST /api/auth/login` – Authenticate user and issue secure HTTP-Only cookie token
-- `POST /api/auth/logout` – Clear auth session cookie
-- `GET /api/auth/me` – Retrieve currently logged-in user profile & memberships
+```bash
+git clone https://github.com/thai-baokin/assignment-thaibao.git
+cd "Ass1 SDN"
+npm install
+```
 
-### 2. Team Management Endpoints
-- `GET /api/teams` – List all teams the current user belongs to (with member & task counts)
-- `POST /api/teams` – Create a new team (creator automatically becomes `OWNER`)
-- `GET /api/teams/:id` – Get team details including members and tasks
-- `PUT /api/teams/:id` – Update team name & description (**Owner only**)
-- `DELETE /api/teams/:id` – Delete team and cascade related records (**Owner only**)
+1. Create `.env` from `.env.example` and fill in the Supabase connection strings and Realtime keys.
+2. Apply migrations and seed the two test accounts:
 
-### 3. Team Member Endpoints
-- `POST /api/teams/:id/members` – Add an existing user to team by email (**Owner only**)
-- `DELETE /api/teams/:id/members/:userId` – Remove a member (**Owner only**) or leave team (Member self-removal)
+```bash
+npx prisma migrate deploy
+npx prisma db seed
+```
 
-### 4. Task Management Endpoints
-- `GET /api/teams/:id/tasks` – List all tasks for a specific team
-- `POST /api/teams/:id/tasks` – Create a task inside a team (Team members only, sets `creatorId`)
-- `PUT /api/tasks/:id` – Update task status, priority, description, or assignee
-- `DELETE /api/tasks/:id` – Delete a task (**RBAC enforced:** only Task Creator, Assignee, or Team Owner)
+3. Start the app:
 
----
+```bash
+npm run dev
+```
 
-## ✨ Features Implemented
+4. Open http://localhost:3000.
 
-1. **Authentication & Session:**
-   - Sign up with automatic validation and login.
-   - Secure login with bcrypt hash verification and JWT in HttpOnly cookie.
-   - Middleware protecting all `/teams/*` routes from unauthorized access.
-   - User profile dropdown with quick logout and team counter.
-2. **Team Workspace:**
-   - Multi-team support: users can create, join, and switch between multiple teams.
-   - Owner vs Member role differentiation.
-   - Invite team members by registered email.
-3. **Task & Workflow Management:**
-   - Create, edit, and assign tasks to specific team members.
-   - Colored visual badges for Priority (`HIGH`, `MEDIUM`, `LOW`) and Status (`TODO`, `IN_PROGRESS`, `DONE`).
-   - Role-based deletion protection: strictly restricted to Creator, Assignee, or Team Owner.
-4. **Bonus Features:**
-   - **Kanban Board View:** 3-column workflow board with 1-click status transitions.
-   - **Table View:** Compact list view with comprehensive details.
-   - **Advanced Filters & Search:** Live search by title/description, filter by status, priority, and assignee (including "Assigned to Me" and "Unassigned").
+Useful checks:
+
+```bash
+npm run lint
+npm run build
+```
+
+### Multi-session real-time test
+
+1. Open the deployed site in a normal window and log in as `admin@taskpulse.io`.
+2. Open an incognito window (or a second browser profile) and log in as `member@taskpulse.io`.
+3. Both accounts belong to the same seeded team. Open the team page in both windows.
+4. Send a chat message in one window; it appears instantly in the other.
+5. Create or move a task in one window; the Kanban board updates instantly in the other.
+6. Assign a task to the other account to see the notification bell update live.
 
 ---
 
-## 🚀 Local Development Setup
+## Deployment
 
-1. **Clone repository & Install dependencies:**
-   ```bash
-   git clone <repo-url>
-   cd "Ass1 SDN"
-   npm install
-   ```
-
-2. **Configure Environment Variables (`.env`):**
-   ```env
-   DATABASE_URL="postgresql://postgres.[REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true"
-   DIRECT_URL="postgresql://postgres.[REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres"
-   JWT_SECRET="taskpulse-secure-jwt-secret-assignment-2-key-32chars"
-   ```
-
-3. **Synchronize Database & Seed Data:**
-   ```bash
-   npx prisma db push
-   npx prisma db seed
-   ```
-
-4. **Run Development Server:**
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
+- The app is deployed on the same Vercel project as Assignments 1 and 2: https://assignment-thaibao.vercel.app
+- Add all variables from `.env.example` to the Vercel project (Production + Preview).
+- Supabase Realtime is enabled by default for public channels; no extra server is required.
+- If a separate NestJS backend were used, it would be deployed to Render and configured with `DATABASE_URL`; this submission uses Next.js Route Handlers so that field is **N/A**.

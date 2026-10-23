@@ -63,7 +63,9 @@ export default function TeamsPage() {
   }, []);
 
   useEffect(() => {
-    fetchTeams();
+    queueMicrotask(() => {
+      void fetchTeams();
+    });
   }, [fetchTeams]);
 
   const handleCreateTeam = async (e: React.FormEvent) => {

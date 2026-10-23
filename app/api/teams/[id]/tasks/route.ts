@@ -133,7 +133,7 @@ export async function POST(request: Request, { params }: RouteParams) {
         type: "ASSIGNED_TASK",
         title: "Bạn có công việc mới",
         message: `${session.name} đã phân công công việc "${task.title}" cho bạn trong nhóm "${team.name}".`,
-        relatedId: task.id,
+        relatedId: `${teamId}?taskId=${task.id}`,
       });
     }
 

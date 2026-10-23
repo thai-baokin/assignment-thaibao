@@ -1,33 +1,23 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, use } from "react";
+import { useEffect, useState, useCallback, useRef, use, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import {
   Users,
-  Plus,
   Crown,
   ShieldCheck,
   CheckSquare,
   ArrowLeft,
-  Calendar,
   UserPlus,
-  Trash2,
-  Edit2,
   AlertCircle,
   Loader2,
   X,
-  Search,
   Kanban,
   Table as TableIcon,
-  LogOut,
-  Clock,
-  Sparkles,
-  UserCheck,
   User as UserIcon,
   MessageSquare,
-  Shield,
   ArrowUpDown,
   History,
   RefreshCw,
@@ -97,7 +87,7 @@ interface ActivityItem {
   } | null;
 }
 
-export default function TeamDetailPage({
+function TeamDetailContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -105,6 +95,7 @@ export default function TeamDetailPage({
   const resolvedParams = use(params);
   const teamId = resolvedParams.id;
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const previousUserIdRef = useRef<string | null>(null);
 
@@ -118,6 +109,9 @@ export default function TeamDetailPage({
   );
   // Task View mode: 'board' | 'table'
   const [viewMode, setViewMode] = useState<"board" | "table">("board");
+
+  // Highlight task từ notification (?taskId=... hoặc ?highlightTask=...)
+  const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
 
   // Activity log
   const [activities, setActivities] = useState<ActivityItem[]>([]);
@@ -179,7 +173,9 @@ export default function TeamDetailPage({
   }, [teamId]);
 
   useEffect(() => {
-    fetchTeamData(true);
+    queueMicrotask(() => {
+      void fetchTeamData(true);
+    });
   }, [fetchTeamData]);
 
   const fetchActivity = useCallback(async () => {
@@ -214,7 +210,6 @@ export default function TeamDetailPage({
   const currentMember = team?.members ? team.members.find((m) => m.userId === user?.id) : undefined;
   const isOwner = user?.id === team?.ownerId;
   const isAdmin = !isOwner && currentMember?.role === "ADMIN";
-  const isMember = !isOwner && !isAdmin;
   const canManageMembers = isOwner || isAdmin;
   const canEditTeamInfo = isOwner || isAdmin;
 
@@ -272,12 +267,49 @@ export default function TeamDetailPage({
       })
       .subscribe();
 
+    // Polling dự phòng mỗi 30 giây để bảng Kanban vẫn đồng bộ nếu lỡ mất broadcast.
+    const pollInterval = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      void fetchTeamData();
+    }, 30000);
+
     return () => {
       supabase.removeChannel(taskChannel);
       supabase.removeChannel(memberChannel);
+      clearInterval(pollInterval);
     };
   }, [teamId, fetchTeamData]);
 
+  // Xử lý highlight và tự động cuộn đến task khi nhận query param taskId
+  useEffect(() => {
+    const targetTaskId = searchParams.get("taskId") || searchParams.get("highlightTask");
+    if (!targetTaskId) return;
+
+    setHighlightedTaskId(targetTaskId);
+    setActiveTab("tasks");
+    setStatusFilter("ALL");
+    setAssigneeFilter("ALL");
+
+    // Khi team đã load danh sách task, cuộn mượt mà đến thẻ task
+    const scrollTimer = setTimeout(() => {
+      const cardEl =
+        document.getElementById(`task-card-${targetTaskId}`) ||
+        document.getElementById(`task-row-${targetTaskId}`);
+      if (cardEl) {
+        cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 450);
+
+    // Giữ hiệu ứng viền nổi bật trong 12 giây để người dùng nhận biết rõ
+    const clearTimer = setTimeout(() => {
+      setHighlightedTaskId((curr) => (curr === targetTaskId ? null : curr));
+    }, 12000);
+
+    return () => {
+      clearTimeout(scrollTimer);
+      clearTimeout(clearTimer);
+    };
+  }, [searchParams, team?.tasks]);
 
   // Open Task Modal (Create or Edit)
   const openCreateTask = () => {
@@ -420,7 +452,7 @@ export default function TeamDetailPage({
         if (!prev) return prev;
         return { ...prev, tasks: prev.tasks.filter((t) => t.id !== task.id) };
       });
-    } catch (err) {
+    } catch {
       alert("Lỗi khi xóa công việc.");
     }
   };
@@ -818,7 +850,7 @@ export default function TeamDetailPage({
               <option value="UNASSIGNED">Chưa phân công</option>
               {(team.members || []).map((m) => (
                 <option key={m.userId} value={m.userId}>
-                  {m.user?.name || "Thành viên"} ({m.role === "OWNER" ? "Trưởng nhóm" : "Thành viên"})
+                  {m.user?.name || "Thành viên"} ({m.role === "OWNER" ? "Trưởng nhóm" : m.role === "ADMIN" ? "Quản trị viên" : "Thành viên"})
                 </option>
               ))}
             </select>
@@ -891,12 +923,40 @@ export default function TeamDetailPage({
                             ? "Trung bình"
                             : "Thấp";
 
+                        const isHighlighted = highlightedTaskId === task.id;
+
                         return (
                           <div
                             key={task.id}
-                            className="card-3d group rounded-2xl p-4 transition-all flex flex-col justify-between"
+                            id={`task-card-${task.id}`}
+                            className={`card-3d group rounded-2xl p-4 transition-all duration-300 flex flex-col justify-between ${
+                              isHighlighted
+                                ? "ring-4 ring-blue-500 shadow-[0_0_35px_rgba(59,130,246,0.65)] border-2 border-blue-500 bg-blue-50/80 dark:bg-blue-950/60 scale-[1.02]"
+                                : ""
+                            }`}
                           >
                             <div>
+                              {isHighlighted && (
+                                <div className="mb-2.5 flex items-center justify-between rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-md animate-pulse">
+                                  <span className="flex items-center gap-1.5">
+                                    <span className="relative flex h-2 w-2">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                    </span>
+                                    Công việc vừa phân công cho bạn
+                                  </span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setHighlightedTaskId(null);
+                                    }}
+                                    className="text-white/80 hover:text-white text-[11px] font-semibold cursor-pointer"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              )}
+
                               <div className="flex items-start justify-between gap-2 mb-2">
                                 <span className={`pill-3d px-2 py-0.5 rounded text-[10px] border ${priorityBadge}`}>
                                   {priorityLabel}
@@ -1042,14 +1102,31 @@ export default function TeamDetailPage({
                           ? "text-zinc-700 dark:text-zinc-300 font-semibold"
                           : "text-zinc-400";
 
-                      return (
-                        <tr key={task.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40 transition-colors">
-                          <td className="py-3.5 px-4 font-semibold text-black dark:text-white max-w-xs">
-                            <p className="truncate">{task.title}</p>
-                            {task.description && (
-                              <p className="text-[11px] font-normal text-zinc-400 truncate">{task.description}</p>
-                            )}
-                          </td>
+                        const isHighlighted = highlightedTaskId === task.id;
+
+                        return (
+                          <tr
+                            key={task.id}
+                            id={`task-row-${task.id}`}
+                            className={`transition-all duration-300 ${
+                              isHighlighted
+                                ? "bg-blue-50/90 dark:bg-blue-950/70 ring-2 ring-blue-500 font-semibold"
+                                : "hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40"
+                            }`}
+                          >
+                            <td className="py-3.5 px-4 font-semibold text-black dark:text-white max-w-xs">
+                              <div className="flex items-center gap-2">
+                                <p className="truncate">{task.title}</p>
+                                {isHighlighted && (
+                                  <span className="inline-flex items-center gap-1 rounded bg-blue-600 px-1.5 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider animate-pulse whitespace-nowrap">
+                                    Vừa giao
+                                  </span>
+                                )}
+                              </div>
+                              {task.description && (
+                                <p className="text-[11px] font-normal text-zinc-400 truncate">{task.description}</p>
+                              )}
+                            </td>
                           <td className="py-3.5 px-4">
                             <span className={`pill-3d px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBadge}`}>
                               {statusLabel}
@@ -1400,7 +1477,7 @@ export default function TeamDetailPage({
                     <option value="">-- Chưa phân công --</option>
                     {(team.members || []).map((m) => (
                       <option key={m.userId} value={m.userId}>
-                        {m.user?.name || "Thành viên"} ({m.role === "OWNER" ? "Trưởng nhóm" : "Thành viên"})
+                        {m.user?.name || "Thành viên"} ({m.role === "OWNER" ? "Trưởng nhóm" : m.role === "ADMIN" ? "Quản trị viên" : "Thành viên"})
                       </option>
                     ))}
                   </select>
@@ -1589,5 +1666,24 @@ export default function TeamDetailPage({
         </div>
       )}
     </div>
+  );
+}
+
+export default function TeamDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 py-24 flex flex-col items-center justify-center text-slate-400">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-3" />
+          <p className="text-sm font-medium">Đang tải không gian làm việc của nhóm...</p>
+        </div>
+      }
+    >
+      <TeamDetailContent params={params} />
+    </Suspense>
   );
 }

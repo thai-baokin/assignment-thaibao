@@ -40,6 +40,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     const body = await request.json();
     const { email, role = "MEMBER" } = body;
+    const requestedRole = typeof role === "string" ? role.toUpperCase() : "MEMBER";
 
     if (!email || typeof email !== "string" || !email.includes("@")) {
       return NextResponse.json({ error: "Email không hợp lệ." }, { status: 400 });
@@ -67,7 +68,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     // Xác định role: Chỉ Owner mới có quyền chỉ định role ADMIN khi mời
     let assignedRole = "MEMBER";
-    if (role.toUpperCase() === "ADMIN" && actorRole === "OWNER") {
+    if (requestedRole === "ADMIN" && actorRole === "OWNER") {
       assignedRole = "ADMIN";
     }
 

@@ -47,7 +47,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     const body = await request.json();
     const { role } = body;
 
-    const normalizedRole = role?.toUpperCase();
+    const normalizedRole = typeof role === "string" ? role.toUpperCase() : "";
     if (normalizedRole !== "ADMIN" && normalizedRole !== "MEMBER") {
       return NextResponse.json(
         { error: "Vai trò không hợp lệ. Chỉ chấp nhận ADMIN hoặc MEMBER." },

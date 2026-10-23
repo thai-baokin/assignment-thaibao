@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding sample data for Assignment 2 to Supabase...");
+  console.log("Seeding sample data for Assignment 3 & 4 to Supabase...");
 
   const defaultPassword = await bcrypt.hash("password123", 10);
 
@@ -34,18 +34,18 @@ async function main() {
     },
   });
 
-  // 3. Tạo Nhóm mẫu
+  // 3. Tạo Nhóm mẫu (tái sử dụng nhóm do admin sở hữu để seed idempotent)
   let team = await prisma.team.findFirst({
-    where: {
-      name: "Đội Phát Triển TaskPulse (Assignment 2)",
-    },
+    where: { ownerId: adminUser.id },
+    orderBy: { createdAt: "asc" },
   });
 
   if (!team) {
     team = await prisma.team.create({
       data: {
-        name: "Đội Phát Triển TaskPulse (Assignment 2)",
-        description: "Không gian làm việc và quản lý công việc dự án cho các thành viên nhóm.",
+        name: "Đội Phát Triển TaskPulse (Assignment 3 & 4)",
+        description:
+          "Không gian cộng tác thời gian thực: chat nhóm, Kanban live, thông báo và phân quyền 3 cấp.",
         ownerId: adminUser.id,
       },
     });
@@ -129,9 +129,9 @@ async function main() {
   }
 
   console.log("Seeding hoàn tất thành công!");
-  console.log("Tài khoản kiểm thử:");
-  console.log("1. Admin: admin@taskpulse.io / password123 (Vai trò: Owner)");
-  console.log("2. Member: member@taskpulse.io / password123 (Vai trò: Member)");
+  console.log("Cả hai tài khoản đều thuộc cùng một nhóm để kiểm thử realtime:");
+  console.log("1. Owner: admin@taskpulse.io / password123");
+  console.log("2. Member: member@taskpulse.io / password123");
 }
 
 main()
