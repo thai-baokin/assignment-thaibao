@@ -325,23 +325,22 @@ function TeamDetailContent({
     const targetTask = team.tasks?.find((t) => t.id === targetTaskId);
     if (!targetTask) return;
 
-    // Nếu công việc đã hoàn thành rồi thì không hiện thanh thông báo việc cần làm
-    if (targetTask.status !== "DONE") {
-      setHighlightedTaskId(targetTaskId);
-    }
-    setActiveTab("tasks");
-    setStatusFilter("ALL");
-    setAssigneeFilter("ALL");
-
-    // Khi team đã load danh sách task, cuộn mượt mà đến thẻ task
+    // Lên lịch cập nhật state và cuộn đến thẻ task trong timeout để tránh render đồng bộ trong effect
     const scrollTimer = setTimeout(() => {
+      if (targetTask.status !== "DONE") {
+        setHighlightedTaskId(targetTaskId);
+      }
+      setActiveTab("tasks");
+      setStatusFilter("ALL");
+      setAssigneeFilter("ALL");
+
       const cardEl =
         document.getElementById(`task-card-${targetTaskId}`) ||
         document.getElementById(`task-row-${targetTaskId}`);
       if (cardEl) {
         cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
       }
-    }, 450);
+    }, 150);
 
     // Giữ hiệu ứng viền nổi bật trong 10 giây rồi tự động xóa param và ẩn viền
     const clearTimer = setTimeout(() => {

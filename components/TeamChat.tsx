@@ -208,7 +208,7 @@ export default function TeamChat({ teamId, teamName, ownerId, adminIds = [] }: T
       supabase.removeChannel(channel);
       clearInterval(pollInterval);
     };
-  }, [userId, userName, teamId]);
+  }, [userId, userName, teamId, fetchMessages]);
 
   // Xử lý gửi tín hiệu typing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
