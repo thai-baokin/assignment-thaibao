@@ -112,6 +112,25 @@ function TeamDetailContent({
 
   // Highlight task từ notification (?taskId=... hoặc ?highlightTask=...)
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
+  const handledTaskIdRef = useRef<string | null>(null);
+  const [updatingTaskIds, setUpdatingTaskIds] = useState<Set<string>>(new Set());
+
+  // Xóa highlight và xóa sạch query param taskId/highlightTask trên URL để tránh bị kích hoạt lại
+  const clearHighlight = useCallback(() => {
+    setHighlightedTaskId(null);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has("taskId") || url.searchParams.has("highlightTask")) {
+        url.searchParams.delete("taskId");
+        url.searchParams.delete("highlightTask");
+        window.history.replaceState(
+          {},
+          "",
+          url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : "")
+        );
+      }
+    }
+  }, []);
 
   // Activity log
   const [activities, setActivities] = useState<ActivityItem[]>([]);
@@ -154,7 +173,9 @@ function TeamDetailContent({
     try {
       if (isInitial) setLoading(true);
       setError(null);
-      const res = await fetch(`/api/teams/${teamId}`);
+      const res = await fetch(`/api/teams/${teamId}`, {
+        cache: "no-store",
+      });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Không thể tải thông tin nhóm.");
@@ -181,7 +202,9 @@ function TeamDetailContent({
   const fetchActivity = useCallback(async () => {
     try {
       setActivityLoading(true);
-      const res = await fetch(`/api/teams/${teamId}/activity`);
+      const res = await fetch(`/api/teams/${teamId}/activity`, {
+        cache: "no-store",
+      });
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) setActivities(data);
@@ -237,6 +260,9 @@ function TeamDetailContent({
       .on("broadcast", { event: "task-updated" }, (event) => {
         const updatedTask = event.payload as TaskItem;
         if (updatedTask && updatedTask.teamId === teamId) {
+          if (updatedTask.status === "DONE" && (highlightedTaskId === updatedTask.id || searchParams.get("taskId") === updatedTask.id)) {
+            clearHighlight();
+          }
           setTeam((prev) => {
             if (!prev) return prev;
             return {
@@ -278,14 +304,31 @@ function TeamDetailContent({
       supabase.removeChannel(memberChannel);
       clearInterval(pollInterval);
     };
-  }, [teamId, fetchTeamData]);
+  }, [teamId, fetchTeamData, highlightedTaskId, searchParams, clearHighlight]);
 
-  // Xử lý highlight và tự động cuộn đến task khi nhận query param taskId
+  // Xử lý highlight và tự động cuộn đến task khi nhận query param taskId từ notification
   useEffect(() => {
     const targetTaskId = searchParams.get("taskId") || searchParams.get("highlightTask");
-    if (!targetTaskId) return;
+    if (!targetTaskId) {
+      handledTaskIdRef.current = null;
+      return;
+    }
 
-    setHighlightedTaskId(targetTaskId);
+    // Không kích hoạt lại nếu query param này đã được xử lý xong
+    if (handledTaskIdRef.current === targetTaskId) return;
+
+    // Chờ đến khi team và tasks được tải xong
+    if (!team) return;
+
+    handledTaskIdRef.current = targetTaskId;
+
+    const targetTask = team.tasks?.find((t) => t.id === targetTaskId);
+    if (!targetTask) return;
+
+    // Nếu công việc đã hoàn thành rồi thì không hiện thanh thông báo việc cần làm
+    if (targetTask.status !== "DONE") {
+      setHighlightedTaskId(targetTaskId);
+    }
     setActiveTab("tasks");
     setStatusFilter("ALL");
     setAssigneeFilter("ALL");
@@ -300,16 +343,16 @@ function TeamDetailContent({
       }
     }, 450);
 
-    // Giữ hiệu ứng viền nổi bật trong 12 giây để người dùng nhận biết rõ
+    // Giữ hiệu ứng viền nổi bật trong 10 giây rồi tự động xóa param và ẩn viền
     const clearTimer = setTimeout(() => {
-      setHighlightedTaskId((curr) => (curr === targetTaskId ? null : curr));
-    }, 12000);
+      clearHighlight();
+    }, 10000);
 
     return () => {
       clearTimeout(scrollTimer);
       clearTimeout(clearTimer);
     };
-  }, [searchParams, team?.tasks]);
+  }, [searchParams, team, clearHighlight]);
 
   // Open Task Modal (Create or Edit)
   const openCreateTask = () => {
@@ -370,6 +413,10 @@ function TeamDetailContent({
 
       setIsTaskModalOpen(false);
 
+      if (editingTask && (highlightedTaskId === editingTask.id || searchParams.get("taskId") === editingTask.id) && taskStatus === "DONE") {
+        clearHighlight();
+      }
+
       // Cập nhật ngay local state tức thì thay vì gọi lại fetchTeamData() tốn tài nguyên
       if (editingTask) {
         setTeam((prev) =>
@@ -399,7 +446,16 @@ function TeamDetailContent({
 
   // Quick Status change với Optimistic UI (chuyển trạng thái tức thì 0ms)
   const handleQuickStatusChange = async (task: TaskItem, newStatus: "TODO" | "IN_PROGRESS" | "DONE") => {
-    const previousTasks = team?.tasks || [];
+    if (task.status === newStatus) return;
+    if (updatingTaskIds.has(task.id)) return;
+
+    setUpdatingTaskIds((prev) => new Set(prev).add(task.id));
+    const previousStatus = task.status;
+
+    // Nếu vừa đánh dấu hoàn thành task đang được highlight, tắt highlight ngay lập tức
+    if (newStatus === "DONE" && (highlightedTaskId === task.id || searchParams.get("taskId") === task.id)) {
+      clearHighlight();
+    }
 
     // Cập nhật ngay trên UI ngay lập tức
     setTeam((prev) => {
@@ -427,13 +483,34 @@ function TeamDetailContent({
             : prev
         );
       } else {
-        // Rollback nếu máy chủ báo lỗi
-        setTeam((prev) => (prev ? { ...prev, tasks: previousTasks } : prev));
+        // Rollback nếu máy chủ báo lỗi (chỉ rollback task cụ thể này)
+        setTeam((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            tasks: prev.tasks.map((t) => (t.id === task.id ? { ...t, status: previousStatus } : t)),
+          };
+        });
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || "Không thể cập nhật trạng thái công việc.");
       }
     } catch (err) {
       console.error(err);
       // Rollback nếu mất mạng
-      setTeam((prev) => (prev ? { ...prev, tasks: previousTasks } : prev));
+      setTeam((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          tasks: prev.tasks.map((t) => (t.id === task.id ? { ...t, status: previousStatus } : t)),
+        };
+      });
+      alert("Lỗi kết nối khi cập nhật công việc.");
+    } finally {
+      setUpdatingTaskIds((prev) => {
+        const next = new Set(prev);
+        next.delete(task.id);
+        return next;
+      });
     }
   };
 
@@ -739,7 +816,10 @@ function TeamDetailContent({
           </button>
 
           <button
-            onClick={() => setActiveTab("chat")}
+            onClick={() => {
+              setActiveTab("chat");
+              clearHighlight();
+            }}
             className={`pb-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer inline-flex items-center gap-1.5 ${
               activeTab === "chat"
                 ? "border-black text-black dark:border-white dark:text-white"
@@ -754,6 +834,7 @@ function TeamDetailContent({
           <button
             onClick={() => {
               setActiveTab("activity");
+              clearHighlight();
               fetchActivity();
             }}
             className={`pb-3 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer inline-flex items-center gap-1.5 ${
@@ -923,7 +1004,7 @@ function TeamDetailContent({
                             ? "Trung bình"
                             : "Thấp";
 
-                        const isHighlighted = highlightedTaskId === task.id;
+                        const isHighlighted = highlightedTaskId === task.id && task.status !== "DONE";
 
                         return (
                           <div
@@ -948,7 +1029,7 @@ function TeamDetailContent({
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setHighlightedTaskId(null);
+                                      clearHighlight();
                                     }}
                                     className="text-white/80 hover:text-white text-[11px] font-semibold cursor-pointer"
                                   >
@@ -1016,24 +1097,33 @@ function TeamDetailContent({
                                 <div className="flex items-center gap-1 pt-1 justify-end">
                                   {colStatus !== "TODO" && (
                                     <button
+                                      disabled={updatingTaskIds.has(task.id)}
                                       onClick={() => handleQuickStatusChange(task, "TODO")}
-                                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black cursor-pointer transition-colors"
+                                      className={`px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black transition-colors ${
+                                        updatingTaskIds.has(task.id) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                      }`}
                                     >
                                       Cần làm
                                     </button>
                                   )}
                                   {colStatus !== "IN_PROGRESS" && (
                                     <button
+                                      disabled={updatingTaskIds.has(task.id)}
                                       onClick={() => handleQuickStatusChange(task, "IN_PROGRESS")}
-                                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black cursor-pointer transition-colors"
+                                      className={`px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black transition-colors ${
+                                        updatingTaskIds.has(task.id) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                      }`}
                                     >
                                       Đang làm
                                     </button>
                                   )}
                                   {colStatus !== "DONE" && (
                                     <button
+                                      disabled={updatingTaskIds.has(task.id)}
                                       onClick={() => handleQuickStatusChange(task, "DONE")}
-                                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black cursor-pointer transition-colors"
+                                      className={`px-2 py-0.5 text-[10px] font-semibold rounded-md bg-zinc-100 text-zinc-700 hover:bg-black hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-white dark:hover:text-black transition-colors ${
+                                        updatingTaskIds.has(task.id) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                      }`}
                                     >
                                       Hoàn thành
                                     </button>
@@ -1102,7 +1192,7 @@ function TeamDetailContent({
                           ? "text-zinc-700 dark:text-zinc-300 font-semibold"
                           : "text-zinc-400";
 
-                        const isHighlighted = highlightedTaskId === task.id;
+                        const isHighlighted = highlightedTaskId === task.id && task.status !== "DONE";
 
                         return (
                           <tr

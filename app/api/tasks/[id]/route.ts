@@ -167,7 +167,12 @@ export async function PUT(request: Request, { params }: RouteParams) {
       await broadcastRealtime(teamTasksTopic(existingTask.teamId), "task-updated", updatedTask);
     }
 
-    return NextResponse.json(updatedTask, { status: 200 });
+    return NextResponse.json(updatedTask, {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+      },
+    });
   } catch (error) {
     console.error("Lỗi khi cập nhật task:", error);
     return NextResponse.json(

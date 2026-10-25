@@ -48,7 +48,12 @@ export async function GET(request: Request, { params }: RouteParams) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(tasks, { status: 200 });
+    return NextResponse.json(tasks, {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+      },
+    });
   } catch (error) {
     console.error("Lỗi khi lấy tasks của nhóm:", error);
     return NextResponse.json({ error: "Lỗi máy chủ khi lấy danh sách task." }, { status: 500 });

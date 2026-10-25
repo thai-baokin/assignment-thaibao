@@ -56,7 +56,12 @@ export async function GET(request: Request, { params }: RouteParams) {
       );
     }
 
-    return NextResponse.json(team, { status: 200 });
+    return NextResponse.json(team, {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      },
+    });
   } catch (error) {
     console.error("Lỗi khi lấy chi tiết team:", error);
     return NextResponse.json({ error: "Lỗi máy chủ khi lấy chi tiết nhóm." }, { status: 500 });
