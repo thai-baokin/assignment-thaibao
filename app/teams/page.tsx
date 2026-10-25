@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, AlertCircle, RefreshCw } from "lucide-react";
 
 interface TeamItem {
   id: string;
@@ -45,21 +45,34 @@ export default function TeamsPage() {
   const [createError, setCreateError] = useState<string | null>(null);
 
   const fetchTeams = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch("/api/teams");
-      if (!res.ok) {
+    setLoading(true);
+    setError(null);
+
+    let lastErrorMsg = "Lỗi khi kết nối máy chủ.";
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await fetch("/api/teams", {
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Không thể tải danh sách nhóm.");
+        }
         const data = await res.json();
-        throw new Error(data.error || "Không thể tải danh sách nhóm.");
+        setTeams(data);
+        setError(null);
+        setLoading(false);
+        return;
+      } catch (err: unknown) {
+        lastErrorMsg = err instanceof Error ? err.message : "Lỗi khi kết nối máy chủ.";
+        if (attempt === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 800));
+        }
       }
-      const data = await res.json();
-      setTeams(data);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Lỗi khi kết nối máy chủ.");
-    } finally {
-      setLoading(false);
     }
+
+    setError(lastErrorMsg);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -125,18 +138,33 @@ export default function TeamsPage() {
         </button>
       </div>
 
-      {/* Error alert */}
-      {error && (
-        <div className="mt-6 rounded-xl border border-zinc-300 bg-zinc-100 p-4 text-xs font-medium text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
-          <span>{error}</span>
-        </div>
-      )}
-
       {/* Loading state */}
       {loading ? (
         <div className="py-24 flex flex-col items-center justify-center text-zinc-400">
           <Loader2 className="h-6 w-6 animate-spin text-black dark:text-white mb-2" />
           <p className="text-xs font-medium">Đang tải danh sách nhóm...</p>
+        </div>
+      ) : error ? (
+        /* Error State */
+        <div className="mt-10 rounded-2xl border border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-950/20 p-8 text-center backdrop-blur-sm max-w-lg mx-auto">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400 mb-4">
+            <AlertCircle className="h-6 w-6" />
+          </div>
+          <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+            Không thể tải danh sách nhóm
+          </h3>
+          <p className="mt-1.5 text-xs text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto">
+            {error}
+          </p>
+          <div className="mt-5 flex items-center justify-center gap-3">
+            <button
+              onClick={() => void fetchTeams()}
+              className="btn-3d-primary px-4 py-2 text-xs font-semibold cursor-pointer inline-flex items-center gap-2"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Thử lại ngay</span>
+            </button>
+          </div>
         </div>
       ) : teams.length === 0 ? (
         /* Empty State */

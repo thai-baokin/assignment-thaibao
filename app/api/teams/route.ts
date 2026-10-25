@@ -36,10 +36,24 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(teams, { status: 200 });
+    return NextResponse.json(teams, {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      },
+    });
   } catch (error) {
+    const errorDetails = error instanceof Error ? error.message : String(error);
     console.error("Lỗi khi lấy danh sách teams:", error);
-    return NextResponse.json({ error: "Lỗi máy chủ khi lấy danh sách nhóm." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Lỗi máy chủ khi lấy danh sách nhóm.", details: errorDetails },
+      {
+        status: 500,
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      }
+    );
   }
 }
 
